@@ -49,7 +49,7 @@ jobs:
       run: composer audit || echo "Security audit completed"
       continue-on-error: true
 
-  # Job de tests simplificado para la versión actual
+  # Job de tests simplificado solo para Laravel 12.x
   tests:
     name: Tests (PHP ${{ matrix.php }})
     runs-on: ubuntu-latest
