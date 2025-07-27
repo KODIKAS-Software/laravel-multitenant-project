@@ -93,7 +93,7 @@ class Tenant extends Model
 
         $prefix = config('multitenant.database.prefix', 'tenant_');
 
-        return $prefix . $this->slug;
+        return $prefix.$this->slug;
     }
 
     /**
