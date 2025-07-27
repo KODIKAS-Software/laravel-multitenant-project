@@ -34,5 +34,3 @@ parameters:
         # Ignore comparison that's always true
         - '#Comparison operation ">" between int<1, max> and 0 is always true#'
     reportUnmatchedIgnoredErrors: false
-
-bootstrap: packages/kodikas/multitenant/tests/bootstrap.php
