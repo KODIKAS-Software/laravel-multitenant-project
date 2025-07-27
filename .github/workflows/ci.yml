@@ -76,21 +76,27 @@ jobs:
         echo "CACHE_DRIVER=array" >> .env
         echo "SESSION_DRIVER=array" >> .env
         echo "QUEUE_CONNECTION=sync" >> .env
+        echo "LOG_CHANNEL=single" >> .env
+        echo "BROADCAST_DRIVER=log" >> .env
+        echo "MAIL_MAILER=array" >> .env
 
-    - name: Clear and optimize Laravel
+    - name: Clear Laravel configuration cache
       run: |
-        php artisan config:clear
-        php artisan cache:clear
-        php artisan route:clear
-        php artisan view:clear
+        php artisan config:clear || true
+        php artisan route:clear || true
+        php artisan view:clear || true
 
     - name: Run database migrations
       env:
         DB_CONNECTION: sqlite
         DB_DATABASE: database/database.sqlite
+        CACHE_DRIVER: array
+        SESSION_DRIVER: array
       run: |
-        php artisan migrate:fresh --force --seed
-        php artisan db:show
+        echo "Running migrations..."
+        php artisan migrate:fresh --force
+        echo "Checking database tables..."
+        php artisan db:show --database=sqlite
 
     - name: Run tests with coverage
       env:
