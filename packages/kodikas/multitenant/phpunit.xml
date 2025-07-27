@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.1/phpunit.xsd"
-         bootstrap="vendor/autoload.php"
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/11.5/phpunit.xsd"
+         bootstrap="../../../vendor/autoload.php"
          colors="true"
          processIsolation="false"
          stopOnFailure="false"
@@ -13,11 +13,8 @@
          cacheDirectory=".phpunit.cache"
          backupStaticProperties="false">
     <testsuites>
-        <testsuite name="Multitenant Unit Tests">
-            <directory>tests/Unit</directory>
-        </testsuite>
-        <testsuite name="Multitenant Feature Tests">
-            <directory>tests/Feature</directory>
+        <testsuite name="Kodikas Multitenant Test Suite">
+            <directory>tests</directory>
         </testsuite>
     </testsuites>
     <source>
@@ -25,20 +22,19 @@
             <directory>src</directory>
         </include>
         <exclude>
-            <directory>src/Console</directory>
+            <directory>src/database</directory>
             <file>src/MultitenantServiceProvider.php</file>
         </exclude>
     </source>
+    <coverage>
+        <report>
+            <clover outputFile="coverage.xml"/>
+            <html outputDirectory="coverage-html"/>
+            <text outputFile="coverage.txt"/>
+        </report>
+    </coverage>
     <logging>
-        <junit outputFile="build/report.junit.xml"/>
-        <teamcity outputFile="build/teamcity.txt"/>
-        <testdoxHtml outputFile="build/testdox.html"/>
-        <testdoxText outputFile="build/testdox.txt"/>
-        <text outputFile="build/coverage.txt"/>
-        <clover outputFile="build/clover.xml"/>
-        <crap4j outputFile="build/crap4j.xml" threshold="50"/>
-        <html outputDirectory="build/coverage"/>
-        <xml outputDirectory="build/coverage-xml"/>
+        <testdoxHtml outputFile="testdox.html"/>
+        <testdoxText outputFile="testdox.txt"/>
     </logging>
 </phpunit>
-
