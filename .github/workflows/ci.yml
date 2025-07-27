@@ -127,7 +127,7 @@ jobs:
     - name: Run package tests
       run: |
         cd packages/kodikas/multitenant
-        ../../../vendor/bin/phpunit --testdox --verbose
+        ../../../vendor/bin/phpunit --configuration=phpunit.xml --testdox --verbose
       continue-on-error: true
 
     - name: Run application tests

@@ -3,7 +3,7 @@
 namespace Kodikas\Multitenant\Tests\Unit;
 
 use Kodikas\Multitenant\Models\TenantUser;
-use PHPUnit\Framework\TestCase;
+use Kodikas\Multitenant\Tests\TestCase;
 
 /**
  * Tests unitarios para el modelo TenantUser
