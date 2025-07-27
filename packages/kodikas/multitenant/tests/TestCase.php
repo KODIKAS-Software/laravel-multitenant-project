@@ -30,19 +30,14 @@ abstract class TestCase extends Orchestra
      */
     protected function getEnvironmentSetUp($app): void
     {
-        // Configurar base de datos SQLite en memoria
-        $app['config']->set('database.default', 'testbench');
-        $app['config']->set('database.connections.testbench', [
-            'driver' => 'sqlite',
+        config()->set('database.default', 'testing');
+        config()->set('database.connections.testing', [
+            'driver'   => 'sqlite',
             'database' => ':memory:',
-            'prefix' => '',
+            'prefix'   => '',
         ]);
 
-        // Configurar cache en array para tests
-        $app['config']->set('cache.default', 'array');
-
-        // Configurar session en array para tests
-        $app['config']->set('session.driver', 'array');
+        config()->set('app.key', 'base64:'.base64_encode(random_bytes(32)));
     }
 
     /**
@@ -50,8 +45,8 @@ abstract class TestCase extends Orchestra
      */
     protected function setUpDatabase(): void
     {
-        // Ejecutar migraciones si existen
-        $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
+        // Crear las tablas necesarias para los tests
+        $this->artisan('migrate', ['--database' => 'testing']);
     }
 
     /**

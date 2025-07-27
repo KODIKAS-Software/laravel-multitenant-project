@@ -1,0 +1,44 @@
+name: Security Scan
+
+on:
+  push:
+    branches: [ master, develop ]
+  pull_request:
+    branches: [ master, develop ]
+  schedule:
+    - cron: '0 2 * * 1' # Weekly on Mondays
+
+jobs:
+  security-scan:
+    runs-on: ubuntu-latest
+    name: Security Vulnerability Scan
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: 8.2
+        extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv
+        coverage: none
+
+    - name: Install dependencies
+      run: composer install --no-interaction --prefer-dist --no-dev
+
+    - name: Run security audit
+      run: composer audit
+
+    - name: Install Enlightn Security Checker
+      run: composer require --dev enlightn/security-checker
+
+    - name: Run Enlightn Security Checker
+      run: vendor/bin/security-checker security:check composer.lock
+
+    - name: Check for known security vulnerabilities in package
+      run: |
+        cd packages/kodikas/multitenant
+        if [ -f "composer.lock" ]; then
+          composer audit
+        fi
