@@ -1,0 +1,46 @@
+{
+    "name": "kodikas/laravel-multitenant",
+    "description": "Paquete Laravel para manejo avanzado de multi-tenant tipo SaaS con enfoque latinoamericano/empresarial",
+    "type": "library",
+    "license": "MIT",
+    "keywords": ["laravel", "multitenant", "saas", "tenant", "multitenancy"],
+    "authors": [
+        {
+            "name": "Miguel E Uicab Canabal",
+            "email": "miguel@kodikas.com"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "laravel/framework": "^10.0|^11.0|^12.0",
+        "spatie/laravel-permission": "^6.0",
+        "doctrine/dbal": "^3.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^8.0|^9.0|^10.0",
+        "phpunit/phpunit": "^10.0|^11.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Kodikas\\Multitenant\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Kodikas\\Multitenant\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Kodikas\\Multitenant\\MultitenantServiceProvider"
+            ],
+            "aliases": {
+                "Tenant": "Kodikas\\Multitenant\\Facades\\Tenant"
+            }
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
+
