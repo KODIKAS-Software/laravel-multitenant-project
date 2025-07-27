@@ -61,7 +61,25 @@ class Tenant extends Model
      */
     public function getConnectionName(): string
     {
+        // During testing, always use the testing connection
+        if (app()->environment('testing')) {
+            return 'testing';
+        }
+
         return "tenant_{$this->slug}";
+    }
+
+    /**
+     * Resolve a connection instance for the model.
+     */
+    public function resolveConnection($connection = null)
+    {
+        // During testing, force use of testing connection
+        if (app()->environment('testing')) {
+            return static::getConnectionResolver()->connection('testing');
+        }
+
+        return parent::resolveConnection($connection);
     }
 
     /**
