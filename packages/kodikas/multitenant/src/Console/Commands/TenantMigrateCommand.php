@@ -34,8 +34,9 @@ class TenantMigrateCommand extends Command
 
         if ($tenantIdentifier) {
             $tenant = $this->findTenant($tenantIdentifier);
-            if (!$tenant) {
+            if (! $tenant) {
                 $this->error("Tenant not found: {$tenantIdentifier}");
+
                 return 1;
             }
 
@@ -77,11 +78,11 @@ class TenantMigrateCommand extends Command
 
             try {
                 Artisan::call($command, $options);
-                $this->info("✅ Migrations completed for tenant");
+                $this->info('✅ Migrations completed for tenant');
 
-                if (!$fresh && $seed) {
+                if (! $fresh && $seed) {
                     Artisan::call('db:seed', ['--force' => $force]);
-                    $this->info("✅ Seeding completed for tenant");
+                    $this->info('✅ Seeding completed for tenant');
                 }
             } catch (\Exception $e) {
                 $this->error("Migration failed: {$e->getMessage()}");
@@ -97,7 +98,8 @@ class TenantMigrateCommand extends Command
         $tenants = Tenant::all();
 
         if ($tenants->isEmpty()) {
-            $this->warn("No tenants found.");
+            $this->warn('No tenants found.');
+
             return;
         }
 

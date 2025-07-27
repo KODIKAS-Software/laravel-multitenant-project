@@ -32,8 +32,9 @@ class TenantSeedCommand extends Command
 
         if ($tenantIdentifier) {
             $tenant = $this->findTenant($tenantIdentifier);
-            if (!$tenant) {
+            if (! $tenant) {
                 $this->error("Tenant not found: {$tenantIdentifier}");
+
                 return 1;
             }
 
@@ -73,7 +74,7 @@ class TenantSeedCommand extends Command
 
             try {
                 Artisan::call('db:seed', $options);
-                $this->info("✅ Seeding completed for tenant");
+                $this->info('✅ Seeding completed for tenant');
             } catch (\Exception $e) {
                 $this->error("Seeding failed: {$e->getMessage()}");
             }
@@ -88,7 +89,8 @@ class TenantSeedCommand extends Command
         $tenants = Tenant::active()->get();
 
         if ($tenants->isEmpty()) {
-            $this->warn("No active tenants found.");
+            $this->warn('No active tenants found.');
+
             return;
         }
 
@@ -102,6 +104,6 @@ class TenantSeedCommand extends Command
             }
         }
 
-        $this->info("✅ All tenant seeding completed!");
+        $this->info('✅ All tenant seeding completed!');
     }
 }

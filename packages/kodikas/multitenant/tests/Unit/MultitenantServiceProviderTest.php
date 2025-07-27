@@ -2,8 +2,8 @@
 
 namespace Kodikas\Multitenant\Tests\Unit;
 
-use Kodikas\Multitenant\Tests\TestCase;
 use Kodikas\Multitenant\MultitenantServiceProvider;
+use Kodikas\Multitenant\Tests\TestCase;
 
 class MultitenantServiceProviderTest extends TestCase
 {

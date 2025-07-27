@@ -2,15 +2,17 @@
 
 namespace Kodikas\Multitenant;
 
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
-use Kodikas\Multitenant\Models\Tenant;
+use Illuminate\Support\Facades\DB;
 use Kodikas\Multitenant\Exceptions\TenantNotResolvedException;
+use Kodikas\Multitenant\Models\Tenant;
 
 class TenantManager
 {
     protected $app;
+
     protected $currentTenant;
+
     protected $originalConnection;
 
     public function __construct($app)
@@ -54,7 +56,7 @@ class TenantManager
      */
     public function current(): Tenant
     {
-        if (!$this->currentTenant) {
+        if (! $this->currentTenant) {
             throw new TenantNotResolvedException('No tenant resolved for current request');
         }
 
@@ -70,6 +72,7 @@ class TenantManager
 
         try {
             $this->set($tenant);
+
             return $callback();
         } finally {
             $this->set($originalTenant);
@@ -177,7 +180,7 @@ class TenantManager
      */
     public function find(string $identifier): ?Tenant
     {
-        $cacheKey = config('multitenant.cache.prefix') . "identifier:{$identifier}";
+        $cacheKey = config('multitenant.cache.prefix')."identifier:{$identifier}";
 
         if (config('multitenant.cache.enabled')) {
             return Cache::remember($cacheKey, config('multitenant.cache.ttl'), function () use ($identifier) {
@@ -276,9 +279,9 @@ class TenantManager
 
             // Clear cache
             if (config('multitenant.cache.enabled')) {
-                Cache::forget(config('multitenant.cache.prefix') . "identifier:{$tenant->slug}");
-                Cache::forget(config('multitenant.cache.prefix') . "identifier:{$tenant->domain}");
-                Cache::forget(config('multitenant.cache.prefix') . "identifier:{$tenant->subdomain}");
+                Cache::forget(config('multitenant.cache.prefix')."identifier:{$tenant->slug}");
+                Cache::forget(config('multitenant.cache.prefix')."identifier:{$tenant->domain}");
+                Cache::forget(config('multitenant.cache.prefix')."identifier:{$tenant->subdomain}");
             }
 
             DB::commit();

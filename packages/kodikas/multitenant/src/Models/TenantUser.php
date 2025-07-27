@@ -4,7 +4,6 @@ namespace Kodikas\Multitenant\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class TenantUser extends Model
@@ -37,27 +36,43 @@ class TenantUser extends Model
 
     // Tipos de usuario
     const TYPE_OWNER = 'owner';           // Propietario del tenant
+
     const TYPE_ADMIN = 'admin';           // Administrador
+
     const TYPE_EMPLOYEE = 'employee';     // Empleado
+
     const TYPE_CLIENT = 'client';         // Cliente
+
     const TYPE_VENDOR = 'vendor';         // Proveedor
+
     const TYPE_PARTNER = 'partner';       // Socio
+
     const TYPE_CONSULTANT = 'consultant'; // Consultor
+
     const TYPE_GUEST = 'guest';           // Invitado
 
     // Estados de usuario
     const STATUS_ACTIVE = 'active';
+
     const STATUS_INACTIVE = 'inactive';
+
     const STATUS_SUSPENDED = 'suspended';
+
     const STATUS_PENDING = 'pending';
+
     const STATUS_BLOCKED = 'blocked';
 
     // Roles predefinidos
     const ROLE_SUPER_ADMIN = 'super_admin';
+
     const ROLE_ADMIN = 'admin';
+
     const ROLE_MANAGER = 'manager';
+
     const ROLE_EMPLOYEE = 'employee';
+
     const ROLE_CLIENT = 'client';
+
     const ROLE_VIEWER = 'viewer';
 
     /**
@@ -137,6 +152,7 @@ class TenantUser extends Model
 
         // Verificar permisos específicos
         $permissions = $this->permissions ?? [];
+
         return in_array($permission, $permissions);
     }
 
@@ -146,12 +162,12 @@ class TenantUser extends Model
     public function canAccess(): bool
     {
         // Verificar estado del usuario
-        if (!$this->isActive()) {
+        if (! $this->isActive()) {
             return false;
         }
 
         // Verificar estado del tenant
-        if (!$this->tenant->isActive()) {
+        if (! $this->tenant->isActive()) {
             return false;
         }
 
@@ -167,9 +183,9 @@ class TenantUser extends Model
         $restrictions = $this->access_restrictions ?? [];
 
         // Verificar restricciones por IP
-        if (isset($restrictions['allowed_ips']) && !empty($restrictions['allowed_ips'])) {
+        if (isset($restrictions['allowed_ips']) && ! empty($restrictions['allowed_ips'])) {
             $currentIp = request()->ip();
-            if (!in_array($currentIp, $restrictions['allowed_ips'])) {
+            if (! in_array($currentIp, $restrictions['allowed_ips'])) {
                 return false;
             }
         }
@@ -188,7 +204,7 @@ class TenantUser extends Model
         // Verificar días de acceso
         if (isset($restrictions['access_days'])) {
             $currentDay = now()->dayOfWeek; // 0 = domingo, 6 = sábado
-            if (!in_array($currentDay, $restrictions['access_days'])) {
+            if (! in_array($currentDay, $restrictions['access_days'])) {
                 return false;
             }
         }
@@ -202,12 +218,12 @@ class TenantUser extends Model
     public function canPerform(string $action, array $context = []): bool
     {
         // Verificar acceso básico
-        if (!$this->canAccess()) {
+        if (! $this->canAccess()) {
             return false;
         }
 
         // Verificar permisos específicos
-        if (!$this->hasPermission($action)) {
+        if (! $this->hasPermission($action)) {
             return false;
         }
 
@@ -254,6 +270,7 @@ class TenantUser extends Model
         switch ($action) {
             case 'create_order':
                 $currentOrders = $context['current_orders'] ?? 0;
+
                 return $tenant->canPerform('client_orders', $currentOrders);
 
             case 'access_api':
@@ -261,6 +278,7 @@ class TenantUser extends Model
 
             case 'upload_file':
                 $currentStorage = $context['current_storage'] ?? 0;
+
                 return $tenant->canPerform('storage', $currentStorage);
 
             default:

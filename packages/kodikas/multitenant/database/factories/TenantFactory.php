@@ -3,8 +3,8 @@
 namespace Kodikas\Multitenant\Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Kodikas\Multitenant\Models\Tenant;
 use Illuminate\Support\Str;
+use Kodikas\Multitenant\Models\Tenant;
 
 /**
  * Factory para generar tenants de prueba
@@ -46,7 +46,7 @@ class TenantFactory extends Factory
                 'timezone' => $this->faker->randomElement([
                     'America/Mexico_City',
                     'America/New_York',
-                    'Europe/Madrid'
+                    'Europe/Madrid',
                 ]),
             ],
             'limits' => [
@@ -56,7 +56,7 @@ class TenantFactory extends Factory
             ],
             'custom_data' => [
                 'industry' => $this->faker->randomElement([
-                    'technology', 'retail', 'healthcare', 'finance', 'education'
+                    'technology', 'retail', 'healthcare', 'finance', 'education',
                 ]),
                 'employee_count' => $this->faker->numberBetween(1, 1000),
             ],
@@ -66,8 +66,6 @@ class TenantFactory extends Factory
     /**
      * Indicate that the tenant is on trial.
      * Indicar que el tenant está en período de prueba
-     *
-     * @return static
      */
     public function trial(): static
     {
@@ -81,8 +79,6 @@ class TenantFactory extends Factory
     /**
      * Indicate that the tenant is inactive.
      * Indicar que el tenant está inactivo
-     *
-     * @return static
      */
     public function inactive(): static
     {
@@ -94,8 +90,6 @@ class TenantFactory extends Factory
     /**
      * Indicate that the tenant is suspended.
      * Indicar que el tenant está suspendido
-     *
-     * @return static
      */
     public function suspended(): static
     {
@@ -108,8 +102,7 @@ class TenantFactory extends Factory
      * Create tenant with specific plan.
      * Crear tenant con plan específico
      *
-     * @param string $plan Plan name / Nombre del plan
-     * @return static
+     * @param  string  $plan  Plan name / Nombre del plan
      */
     public function withPlan(string $plan): static
     {
@@ -125,8 +118,7 @@ class TenantFactory extends Factory
      * Create tenant with custom domain.
      * Crear tenant con dominio personalizado
      *
-     * @param string $domain Custom domain / Dominio personalizado
-     * @return static
+     * @param  string  $domain  Custom domain / Dominio personalizado
      */
     public function withDomain(string $domain): static
     {

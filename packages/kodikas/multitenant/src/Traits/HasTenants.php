@@ -5,8 +5,8 @@ namespace Kodikas\Multitenant\Traits;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Kodikas\Multitenant\Models\Tenant;
-use Kodikas\Multitenant\Models\TenantUser;
 use Kodikas\Multitenant\Models\TenantInvitation;
+use Kodikas\Multitenant\Models\TenantUser;
 
 trait HasTenants
 {
@@ -16,13 +16,13 @@ trait HasTenants
     public function tenants(): BelongsToMany
     {
         return $this->belongsToMany(Tenant::class, 'tenant_users')
-                    ->using(TenantUser::class)
-                    ->withPivot([
-                        'user_type', 'role', 'status', 'permissions',
-                        'invited_by', 'invited_at', 'joined_at', 'last_access_at',
-                        'access_restrictions', 'custom_data'
-                    ])
-                    ->withTimestamps();
+            ->using(TenantUser::class)
+            ->withPivot([
+                'user_type', 'role', 'status', 'permissions',
+                'invited_by', 'invited_at', 'joined_at', 'last_access_at',
+                'access_restrictions', 'custom_data',
+            ])
+            ->withTimestamps();
     }
 
     /**
@@ -39,8 +39,8 @@ trait HasTenants
     public function activeTenants(): BelongsToMany
     {
         return $this->tenants()
-                    ->wherePivot('status', TenantUser::STATUS_ACTIVE)
-                    ->where('tenants.status', Tenant::STATUS_ACTIVE);
+            ->wherePivot('status', TenantUser::STATUS_ACTIVE)
+            ->where('tenants.status', Tenant::STATUS_ACTIVE);
     }
 
     /**
@@ -58,7 +58,7 @@ trait HasTenants
     {
         return $this->tenants()->wherePivot('role', [
             TenantUser::ROLE_SUPER_ADMIN,
-            TenantUser::ROLE_ADMIN
+            TenantUser::ROLE_ADMIN,
         ]);
     }
 
@@ -84,7 +84,7 @@ trait HasTenants
     public function pendingInvitations(): HasMany
     {
         return $this->hasMany(TenantInvitation::class, 'email', 'email')
-                    ->where('status', TenantInvitation::STATUS_PENDING);
+            ->where('status', TenantInvitation::STATUS_PENDING);
     }
 
     /**
@@ -102,7 +102,7 @@ trait HasTenants
     {
         $tenantUser = $this->getTenantUser($tenant);
 
-        if (!$tenantUser) {
+        if (! $tenantUser) {
             return false;
         }
 
@@ -115,8 +115,8 @@ trait HasTenants
     public function getTenantUser(Tenant $tenant): ?TenantUser
     {
         return TenantUser::where('tenant_id', $tenant->id)
-                        ->where('user_id', $this->id)
-                        ->first();
+            ->where('user_id', $this->id)
+            ->first();
     }
 
     /**
@@ -126,7 +126,7 @@ trait HasTenants
     {
         $tenantUser = $this->getTenantUser($tenant);
 
-        if (!$tenantUser) {
+        if (! $tenantUser) {
             return false;
         }
 
@@ -140,7 +140,7 @@ trait HasTenants
     {
         $tenantUser = $this->getTenantUser($tenant);
 
-        if (!$tenantUser) {
+        if (! $tenantUser) {
             return false;
         }
 
@@ -229,8 +229,8 @@ trait HasTenants
     public function leaveTenant(Tenant $tenant): bool
     {
         return TenantUser::where('tenant_id', $tenant->id)
-                        ->where('user_id', $this->id)
-                        ->delete();
+            ->where('user_id', $this->id)
+            ->delete();
     }
 
     /**
@@ -271,7 +271,7 @@ trait HasTenants
      */
     public function switchToTenant(Tenant $tenant): bool
     {
-        if (!$this->canAccessTenant($tenant)) {
+        if (! $this->canAccessTenant($tenant)) {
             return false;
         }
 
@@ -288,7 +288,7 @@ trait HasTenants
     {
         $tenantUser = $this->getTenantUser($tenant);
 
-        if (!$tenantUser) {
+        if (! $tenantUser) {
             return [];
         }
 

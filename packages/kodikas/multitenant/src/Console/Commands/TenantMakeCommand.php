@@ -3,8 +3,8 @@
 namespace Kodikas\Multitenant\Console\Commands;
 
 use Illuminate\Console\Command;
-use Kodikas\Multitenant\Models\Tenant;
 use Illuminate\Support\Str;
+use Kodikas\Multitenant\Models\Tenant;
 
 class TenantMakeCommand extends Command
 {
@@ -37,6 +37,7 @@ class TenantMakeCommand extends Command
         // Verificar si el slug ya existe
         if (Tenant::where('slug', $slug)->exists()) {
             $this->error("Tenant with slug '{$slug}' already exists.");
+
             return 1;
         }
 
@@ -56,7 +57,7 @@ class TenantMakeCommand extends Command
                 ],
             ]);
 
-            $this->info("✅ Tenant created successfully!");
+            $this->info('✅ Tenant created successfully!');
             $this->table(['Field', 'Value'], [
                 ['ID', $tenant->id],
                 ['Name', $tenant->name],
@@ -74,6 +75,7 @@ class TenantMakeCommand extends Command
             return 0;
         } catch (\Exception $e) {
             $this->error("Failed to create tenant: {$e->getMessage()}");
+
             return 1;
         }
     }
@@ -87,8 +89,9 @@ class TenantMakeCommand extends Command
 
         $user = $userModel::where('email', $email)->first();
 
-        if (!$user) {
+        if (! $user) {
             $this->warn("User with email {$email} not found. Please create the user first.");
+
             return;
         }
 
@@ -96,7 +99,7 @@ class TenantMakeCommand extends Command
             'view_all_data',
             'manage_users',
             'manage_tenant',
-            'billing_access'
+            'billing_access',
         ]);
 
         $this->info("✅ User {$email} added as owner of tenant {$tenant->name}");
