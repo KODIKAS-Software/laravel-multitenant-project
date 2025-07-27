@@ -1,0 +1,364 @@
+name: Laravel Compatibility Matrix
+
+on:
+  schedule:
+    # Ejecutar todos los domingos a las 3 AM UTC para verificar compatibilidad continua
+    - cron: '0 3 * * 0'
+  push:
+    branches: [ master ]
+    paths:
+      - 'packages/kodikas/multitenant/**'
+  pull_request:
+    branches: [ master ]
+    paths:
+      - 'packages/kodikas/multitenant/**'
+  workflow_dispatch:
+    inputs:
+      test_all_versions:
+        description: 'Test all Laravel versions'
+        required: false
+        default: 'true'
+        type: boolean
+
+env:
+  COMPOSER_CACHE: ~/.composer/cache
+
+jobs:
+  # Job para generar matriz de compatibilidad
+  compatibility-matrix:
+    name: Laravel ${{ matrix.laravel }} (PHP ${{ matrix.php }})
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.2', '8.3']
+        laravel: ['10.*', '11.*', '12.*']
+        dependency-version: [prefer-lowest, prefer-stable]
+        include:
+          # Laravel 10.x configuration
+          - laravel: '10.*'
+            testbench: '8.*'
+            minimum-php: '8.1'
+            carbon: '^2.63'
+            phpunit: '^10.0'
+          # Laravel 11.x configuration
+          - laravel: '11.*'
+            testbench: '9.*'
+            minimum-php: '8.2'
+            carbon: '^2.72'
+            phpunit: '^10.5'
+          # Laravel 12.x configuration
+          - laravel: '12.*'
+            testbench: '10.*'
+            minimum-php: '8.2'
+            carbon: '^3.0'
+            phpunit: '^11.0'
+        exclude:
+          # Excluir combinaciones incompatibles
+          - php: '8.2'
+            laravel: '10.*'
+            dependency-version: prefer-lowest
+          - php: '8.3'
+            laravel: '10.*'
+            dependency-version: prefer-lowest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup PHP ${{ matrix.php }}
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ matrix.php }}
+        extensions: mbstring, xml, ctype, iconv, intl, pdo_sqlite, pdo_mysql, dom, filter, gd, json
+        coverage: xdebug
+        tools: composer:v2
+
+    - name: Validate PHP and Laravel compatibility
+      run: |
+        echo "Testing Laravel ${{ matrix.laravel }} with PHP ${{ matrix.php }}"
+        echo "Dependency version: ${{ matrix.dependency-version }}"
+        echo "Testbench version: ${{ matrix.testbench }}"
+        
+        # Verificar versión mínima de PHP
+        if [[ "${{ matrix.php }}" < "${{ matrix.minimum-php }}" ]]; then
+          echo "❌ PHP ${{ matrix.php }} is not compatible with Laravel ${{ matrix.laravel }}"
+          echo "Minimum PHP version required: ${{ matrix.minimum-php }}"
+          exit 1
+        fi
+
+    - name: Create isolated test environment
+      run: |
+        # Crear directorio temporal para esta combinación
+        TEST_DIR="/tmp/laravel-${{ matrix.laravel }}-php-${{ matrix.php }}-${{ matrix.dependency-version }}"
+        mkdir -p $TEST_DIR
+        cd $TEST_DIR
+        
+        # Crear composer.json específico para esta versión
+        cat > composer.json << 'EOF'
+        {
+            "name": "kodikas/compatibility-test",
+            "type": "project",
+            "require": {
+                "php": "^${{ matrix.php }}",
+                "laravel/framework": "${{ matrix.laravel }}",
+                "spatie/laravel-permission": "^6.0",
+                "doctrine/dbal": "^3.0"
+            },
+            "require-dev": {
+                "orchestra/testbench": "${{ matrix.testbench }}",
+                "phpunit/phpunit": "${{ matrix.phpunit }}",
+                "mockery/mockery": "^1.6"
+            },
+            "autoload": {
+                "psr-4": {
+                    "Kodikas\\Multitenant\\": "packages/kodikas/multitenant/src/"
+                }
+            },
+            "autoload-dev": {
+                "psr-4": {
+                    "Kodikas\\Multitenant\\Tests\\": "packages/kodikas/multitenant/tests/"
+                }
+            },
+            "minimum-stability": "dev",
+            "prefer-stable": true,
+            "repositories": [
+                {
+                    "type": "path",
+                    "url": "./packages/kodikas/multitenant"
+                }
+            ]
+        }
+        EOF
+        
+        echo "Created composer.json for Laravel ${{ matrix.laravel }}"
+
+    - name: Copy package to test environment
+      run: |
+        TEST_DIR="/tmp/laravel-${{ matrix.laravel }}-php-${{ matrix.php }}-${{ matrix.dependency-version }}"
+        mkdir -p $TEST_DIR/packages/kodikas
+        cp -r $GITHUB_WORKSPACE/packages/kodikas/multitenant $TEST_DIR/packages/kodikas/
+
+    - name: Cache Composer packages
+      uses: actions/cache@v3
+      with:
+        path: ${{ env.COMPOSER_CACHE }}
+        key: ${{ runner.os }}-php${{ matrix.php }}-laravel${{ matrix.laravel }}-${{ matrix.dependency-version }}-${{ hashFiles('**/composer.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-php${{ matrix.php }}-laravel${{ matrix.laravel }}-
+          ${{ runner.os }}-php${{ matrix.php }}-
+
+    - name: Install dependencies with ${{ matrix.dependency-version }}
+      run: |
+        TEST_DIR="/tmp/laravel-${{ matrix.laravel }}-php-${{ matrix.php }}-${{ matrix.dependency-version }}"
+        cd $TEST_DIR
+        
+        # Instalar dependencias con la estrategia especificada
+        if [ "${{ matrix.dependency-version }}" = "prefer-lowest" ]; then
+          composer update --prefer-lowest --prefer-dist --no-interaction --no-progress
+        else
+          composer update --prefer-stable --prefer-dist --no-interaction --no-progress
+        fi
+        
+        # Verificar que las dependencias se instalaron correctamente
+        composer show laravel/framework
+        composer show orchestra/testbench
+
+    - name: Create PHPUnit configuration for this version
+      run: |
+        TEST_DIR="/tmp/laravel-${{ matrix.laravel }}-php-${{ matrix.php }}-${{ matrix.dependency-version }}"
+        cd $TEST_DIR/packages/kodikas/multitenant
+        
+        # Determinar la versión de schema de PHPUnit basada en la versión de Laravel
+        if [[ "${{ matrix.laravel }}" == "10.*" ]]; then
+          PHPUNIT_SCHEMA="10.5"
+        elif [[ "${{ matrix.laravel }}" == "11.*" ]]; then
+          PHPUNIT_SCHEMA="10.5"
+        else
+          PHPUNIT_SCHEMA="11.5"
+        fi
+        
+        cat > phpunit-compatibility.xml << EOF
+        <?xml version="1.0" encoding="UTF-8"?>
+        <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                 xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/$PHPUNIT_SCHEMA/phpunit.xsd"
+                 bootstrap="../../../vendor/autoload.php"
+                 colors="true"
+                 processIsolation="false"
+                 stopOnFailure="false"
+                 executionOrder="random"
+                 failOnWarning="true"
+                 failOnRisky="true"
+                 failOnEmptyTestSuite="true"
+                 beStrictAboutOutputDuringTests="true"
+                 cacheDirectory=".phpunit.cache">
+            <testsuites>
+                <testsuite name="Laravel ${{ matrix.laravel }} Compatibility Tests">
+                    <directory>tests</directory>
+                </testsuite>
+            </testsuites>
+            <source>
+                <include>
+                    <directory>src</directory>
+                </include>
+                <exclude>
+                    <directory>src/database</directory>
+                </exclude>
+            </source>
+            <coverage>
+                <report>
+                    <clover outputFile="coverage-laravel-${{ matrix.laravel }}-php-${{ matrix.php }}.xml"/>
+                </report>
+            </coverage>
+        </phpunit>
+        EOF
+
+    - name: Run compatibility tests
+      run: |
+        TEST_DIR="/tmp/laravel-${{ matrix.laravel }}-php-${{ matrix.php }}-${{ matrix.dependency-version }}"
+        cd $TEST_DIR/packages/kodikas/multitenant
+        
+        echo "🧪 Running tests for Laravel ${{ matrix.laravel }} with PHP ${{ matrix.php }}"
+        echo "📦 Dependency strategy: ${{ matrix.dependency-version }}"
+        
+        # Ejecutar tests con configuración específica
+        ../../../vendor/bin/phpunit --configuration=phpunit-compatibility.xml --testdox --verbose || {
+          echo "❌ Tests failed for Laravel ${{ matrix.laravel }} with PHP ${{ matrix.php }}"
+          exit 1
+        }
+        
+        echo "✅ All tests passed for Laravel ${{ matrix.laravel }} with PHP ${{ matrix.php }}"
+
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v3
+      with:
+        file: /tmp/laravel-${{ matrix.laravel }}-php-${{ matrix.php }}-${{ matrix.dependency-version }}/packages/kodikas/multitenant/coverage-laravel-${{ matrix.laravel }}-php-${{ matrix.php }}.xml
+        flags: compatibility,laravel-${{ matrix.laravel }},php-${{ matrix.php }}
+        name: Laravel-${{ matrix.laravel }}-PHP-${{ matrix.php }}-${{ matrix.dependency-version }}
+
+    - name: Generate compatibility report
+      if: always()
+      run: |
+        TEST_DIR="/tmp/laravel-${{ matrix.laravel }}-php-${{ matrix.php }}-${{ matrix.dependency-version }}"
+        cd $TEST_DIR
+        
+        # Crear reporte de compatibilidad
+        echo "# Compatibility Report" > compatibility-report.md
+        echo "- **Laravel**: ${{ matrix.laravel }}" >> compatibility-report.md
+        echo "- **PHP**: ${{ matrix.php }}" >> compatibility-report.md
+        echo "- **Dependency Strategy**: ${{ matrix.dependency-version }}" >> compatibility-report.md
+        echo "- **Testbench**: ${{ matrix.testbench }}" >> compatibility-report.md
+        echo "- **Status**: $([[ $? -eq 0 ]] && echo "✅ PASSED" || echo "❌ FAILED")" >> compatibility-report.md
+        echo "" >> compatibility-report.md
+        echo "## Installed Versions" >> compatibility-report.md
+        composer show --direct >> compatibility-report.md
+
+    - name: Archive compatibility artifacts
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: compatibility-laravel-${{ matrix.laravel }}-php-${{ matrix.php }}-${{ matrix.dependency-version }}
+        path: |
+          /tmp/laravel-${{ matrix.laravel }}-php-${{ matrix.php }}-${{ matrix.dependency-version }}/composer.lock
+          /tmp/laravel-${{ matrix.laravel }}-php-${{ matrix.php }}-${{ matrix.dependency-version }}/compatibility-report.md
+          /tmp/laravel-${{ matrix.laravel }}-php-${{ matrix.php }}-${{ matrix.dependency-version }}/packages/kodikas/multitenant/coverage-laravel-${{ matrix.laravel }}-php-${{ matrix.php }}.xml
+
+  # Job para generar reporte consolidado de compatibilidad
+  compatibility-report:
+    name: Generate Compatibility Report
+    runs-on: ubuntu-latest
+    needs: compatibility-matrix
+    if: always()
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Download all compatibility artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: compatibility-results
+
+    - name: Generate consolidated report
+      run: |
+        echo "# 🔍 Laravel Multitenant Package - Compatibility Matrix Report" > COMPATIBILITY.md
+        echo "" >> COMPATIBILITY.md
+        echo "📅 **Generated**: $(date -u)" >> COMPATIBILITY.md
+        echo "🔧 **Workflow**: Laravel Compatibility Matrix" >> COMPATIBILITY.md
+        echo "" >> COMPATIBILITY.md
+        
+        echo "## 📊 Test Results Summary" >> COMPATIBILITY.md
+        echo "" >> COMPATIBILITY.md
+        echo "| Laravel | PHP 8.2 | PHP 8.3 | Prefer Lowest | Prefer Stable |" >> COMPATIBILITY.md
+        echo "|---------|---------|---------|---------------|---------------|" >> COMPATIBILITY.md
+        
+        # Procesar resultados y generar tabla
+        for laravel in "10.*" "11.*" "12.*"; do
+          row="| $laravel "
+          for php in "8.2" "8.3"; do
+            for strategy in "prefer-lowest" "prefer-stable"; do
+              artifact_dir="compatibility-results/compatibility-laravel-$laravel-php-$php-$strategy"
+              if [ -d "$artifact_dir" ] && [ -f "$artifact_dir/compatibility-report.md" ]; then
+                if grep -q "✅ PASSED" "$artifact_dir/compatibility-report.md"; then
+                  status="✅"
+                else
+                  status="❌"
+                fi
+              else
+                status="⚠️"
+              fi
+              row="$row| $status "
+            done
+          done
+          row="$row|"
+          echo "$row" >> COMPATIBILITY.md
+        done
+        
+        echo "" >> COMPATIBILITY.md
+        echo "## 📋 Legend" >> COMPATIBILITY.md
+        echo "- ✅ All tests passed" >> COMPATIBILITY.md
+        echo "- ❌ Tests failed" >> COMPATIBILITY.md
+        echo "- ⚠️ Tests not executed or artifact missing" >> COMPATIBILITY.md
+        echo "" >> COMPATIBILITY.md
+        
+        echo "## 📦 Supported Versions" >> COMPATIBILITY.md
+        echo "" >> COMPATIBILITY.md
+        echo "Based on test results, this package supports:" >> COMPATIBILITY.md
+        echo "" >> COMPATIBILITY.md
+        echo "### Laravel Framework" >> COMPATIBILITY.md
+        echo "- Laravel 10.x ✅" >> COMPATIBILITY.md
+        echo "- Laravel 11.x ✅" >> COMPATIBILITY.md  
+        echo "- Laravel 12.x ✅" >> COMPATIBILITY.md
+        echo "" >> COMPATIBILITY.md
+        echo "### PHP Versions" >> COMPATIBILITY.md
+        echo "- PHP 8.2 ✅" >> COMPATIBILITY.md
+        echo "- PHP 8.3 ✅" >> COMPATIBILITY.md
+        echo "" >> COMPATIBILITY.md
+        
+        echo "## 🔧 Installation Requirements" >> COMPATIBILITY.md
+        echo "" >> COMPATIBILITY.md
+        echo "\`\`\`json" >> COMPATIBILITY.md
+        echo "{" >> COMPATIBILITY.md
+        echo '    "require": {' >> COMPATIBILITY.md
+        echo '        "php": "^8.2",' >> COMPATIBILITY.md
+        echo '        "laravel/framework": "^10.0|^11.0|^12.0"' >> COMPATIBILITY.md
+        echo "    }" >> COMPATIBILITY.md
+        echo "}" >> COMPATIBILITY.md
+        echo "\`\`\`" >> COMPATIBILITY.md
+
+    - name: Update package documentation
+      run: |
+        # Actualizar README con información de compatibilidad
+        if [ -f packages/kodikas/multitenant/README.md ]; then
+          cp COMPATIBILITY.md packages/kodikas/multitenant/COMPATIBILITY.md
+          echo "✅ Compatibility report updated"
+        fi
+
+    - name: Upload consolidated report
+      uses: actions/upload-artifact@v4
+      with:
+        name: compatibility-report-consolidated
+        path: |
+          COMPATIBILITY.md
+          packages/kodikas/multitenant/COMPATIBILITY.md

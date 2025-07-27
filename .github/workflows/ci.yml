@@ -198,6 +198,11 @@ jobs:
       with:
         fetch-depth: 0
 
+    - name: Trigger compatibility validation before release
+      uses: ./.github/workflows/compatibility.yml
+      with:
+        test_all_versions: true
+
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
