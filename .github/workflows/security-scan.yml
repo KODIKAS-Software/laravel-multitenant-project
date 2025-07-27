@@ -1,4 +1,4 @@
-name: Security
+name: Security Scan
 
 on:
   push:
@@ -6,15 +6,15 @@ on:
   pull_request:
     branches: [ develop, master ]
   schedule:
-    - cron: '0 2 * * 1'
+    - cron: '0 2 * * 1' # Weekly scan on Mondays
 
 jobs:
   security:
     runs-on: ubuntu-latest
-    name: Security Scan
+    name: Security Audit
 
     steps:
-    - name: Checkout
+    - name: Checkout code
       uses: actions/checkout@v4
 
     - name: Setup PHP
@@ -26,11 +26,60 @@ jobs:
     - name: Install dependencies
       run: composer install --no-interaction --prefer-dist --no-dev
 
-    - name: Security audit
-      run: composer audit
+    - name: Run Composer Security Audit
+      run: composer audit --format=plain
 
     - name: Check for hardcoded secrets
       run: |
-        echo "Checking for potential secrets..."
-        grep -r -i "password\s*=" --include="*.php" . || echo "No hardcoded passwords found"
-        grep -r -i "api[_-]key" --include="*.php" . || echo "No API keys found"
+        echo "🔍 Scanning for potential hardcoded credentials..."
+        
+        # Check for common secret patterns
+        echo "Checking for API keys..."
+        if grep -r -i "api[_-]key\s*=\s*['\"][^'\"]*['\"]" --include="*.php" --include="*.env*" . 2>/dev/null; then
+          echo "⚠️ Potential API keys found!"
+        else
+          echo "✅ No hardcoded API keys found"
+        fi
+        
+        echo "Checking for passwords..."
+        if grep -r -i "password\s*=\s*['\"][^'\"]*['\"]" --include="*.php" --exclude-dir=vendor . 2>/dev/null; then
+          echo "⚠️ Potential hardcoded passwords found!"
+        else
+          echo "✅ No hardcoded passwords found"
+        fi
+        
+        echo "Checking for tokens..."
+        if grep -r -i "token\s*=\s*['\"][^'\"]*['\"]" --include="*.php" --exclude-dir=vendor . 2>/dev/null; then
+          echo "⚠️ Potential hardcoded tokens found!"
+        else
+          echo "✅ No hardcoded tokens found"
+        fi
+
+    - name: Validate Laravel security configurations
+      run: |
+        echo "🔒 Checking Laravel security configurations..."
+        
+        # Check for debug mode in production
+        if grep -q "APP_DEBUG=true" .env.example; then
+          echo "⚠️ APP_DEBUG should be false in production"
+        else
+          echo "✅ APP_DEBUG configuration looks good"
+        fi
+        
+        # Check for HTTPS settings
+        if grep -q "FORCE_HTTPS=true\|SESSION_SECURE_COOKIE=true" .env.example; then
+          echo "✅ HTTPS security settings found"
+        else
+          echo "ℹ️ Consider adding HTTPS security settings for production"
+        fi
+
+    - name: Scan multitenant package
+      run: |
+        cd packages/kodikas/multitenant
+        if [ -f "composer.json" ]; then
+          echo "🏢 Scanning multitenant package..."
+          composer install --no-interaction --no-dev
+          if [ -f "composer.lock" ]; then
+            composer audit --format=plain
+          fi
+        fi

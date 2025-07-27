@@ -1,3 +1,4 @@
-# This file has been removed to eliminate duplicates
-# Use ci.yml instead
+# ARCHIVO ELIMINADO - WORKFLOW REDUNDANTE
+# Este archivo ha sido eliminado para resolver conflictos de CI/CD
+# La funcionalidad se incluye en ci.yml
 
