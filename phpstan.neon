@@ -1,13 +1,13 @@
 parameters:
     level: 6
     paths:
-        - packages/kodikas/multitenant/src
+        - src
     tmpDir: build/phpstan
     treatPhpDocTypesAsCertain: false
     excludePaths:
-        - packages/kodikas/multitenant/src/Traits/BelongsToTenant.php (?)
-        - packages/kodikas/multitenant/src/Traits/HasTenants.php (?)
-        - packages/kodikas/multitenant/src/Traits/HasUserTypeAccess.php (?)
+        - src/Traits/BelongsToTenant.php (?)
+        - src/Traits/HasTenants.php (?)
+        - src/Traits/HasUserTypeAccess.php (?)
     ignoreErrors:
         # Ignore Eloquent dynamic properties
         - '#Access to an undefined property [a-zA-Z0-9\\_]+::\$[a-zA-Z0-9_]+#'
