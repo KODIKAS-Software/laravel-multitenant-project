@@ -3,13 +3,21 @@
     "description": "Paquete Laravel para manejo avanzado de multi-tenant tipo SaaS con enfoque latinoamericano/empresarial",
     "type": "library",
     "license": "MIT",
-    "keywords": ["laravel", "multitenant", "saas", "tenant", "multitenancy"],
+    "keywords": ["laravel", "multitenant", "saas", "tenant", "multitenancy", "laravel-12", "php-8"],
+    "homepage": "https://github.com/MiguelMort09/laravel-multitenant",
+    "readme": "README.md",
     "authors": [
         {
             "name": "Miguel E Uicab Canabal",
-            "email": "miguel@kodikas.com"
+            "email": "miguel@kodikas.com",
+            "homepage": "https://miguelmort.tech",
+            "role": "Developer"
         }
     ],
+    "support": {
+        "issues": "https://github.com/MiguelMort09/laravel-multitenant/issues",
+        "source": "https://github.com/MiguelMort09/laravel-multitenant"
+    },
     "require": {
         "php": "^8.2",
         "laravel/framework": "^12.0",
@@ -40,7 +48,6 @@
             }
         }
     },
-    "minimum-stability": "dev",
+    "minimum-stability": "stable",
     "prefer-stable": true
 }
-
