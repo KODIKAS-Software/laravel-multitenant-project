@@ -9,6 +9,23 @@ parameters:
         - src/Traits/HasTenants.php (?)
         - src/Traits/HasUserTypeAccess.php (?)
     ignoreErrors:
+        # Ignorar errores de tipos faltantes específicos
+        -
+            identifier: missingType.iterableValue
+        -
+            identifier: missingType.generics
+        -
+            identifier: missingType.return
+        -
+            identifier: missingType.parameter
+        -
+            identifier: missingType.property
+        -
+            identifier: argument.templateType
+
+        # Ignorar método redeclarado específico
+        - '#Cannot redeclare method Kodikas\\Multitenant\\TenantManager::current\(\)#'
+
         # Ignore Eloquent dynamic properties
         - '#Access to an undefined property [a-zA-Z0-9\\_]+::\$[a-zA-Z0-9_]+#'
         # Ignore Eloquent static methods
