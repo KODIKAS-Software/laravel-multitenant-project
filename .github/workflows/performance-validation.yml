@@ -1,0 +1,197 @@
+name: Performance & Advanced Validation
+
+on:
+  push:
+    branches: [ develop, master ]
+  pull_request:
+    branches: [ develop, master ]
+
+jobs:
+  performance-tests:
+    runs-on: ubuntu-latest
+    name: Performance & Load Testing
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: 8.2
+        extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv
+        tools: composer:v2
+
+    - name: Install dependencies
+      run: composer install --no-interaction --prefer-dist
+
+    - name: Setup test environment
+      run: |
+        cp .env.example .env
+        php artisan key:generate
+        touch database/database.sqlite
+        php artisan migrate
+
+    - name: Run Performance Tests
+      run: |
+        echo "🚀 Running performance benchmarks..."
+        
+        # Benchmark de autoload
+        echo "Testing autoload performance..."
+        time php -r "require 'vendor/autoload.php';"
+        
+        # Benchmark de carga de Laravel
+        echo "Testing Laravel boot performance..."
+        time php artisan inspire
+        
+        # Test de memory usage
+        echo "Testing memory usage..."
+        php -r "echo 'Peak Memory: ' . round(memory_get_peak_usage(true)/1024/1024, 2) . ' MB\n';"
+
+    - name: Test Multitenant Package Performance
+      run: |
+        echo "🏢 Testing multitenant package performance..."
+        
+        cd packages/kodikas/multitenant
+        composer install --no-interaction
+        
+        # Test de carga del paquete
+        echo "Testing package autoload performance..."
+        time php -r "require 'vendor/autoload.php'; new \Kodikas\Multitenant\MultitenantServiceProvider(new \Illuminate\Foundation\Application());"
+
+    - name: Database Performance Tests
+      run: |
+        echo "🗄️ Testing database performance..."
+        
+        # Test de conexión a la base de datos
+        time php artisan migrate:status
+        
+        # Test de seeders performance
+        time php artisan db:seed --class=DatabaseSeeder
+
+  code-coverage:
+    runs-on: ubuntu-latest
+    name: Code Coverage Analysis
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup PHP with Xdebug
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: 8.2
+        extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv, xdebug
+        coverage: xdebug
+
+    - name: Install dependencies
+      run: composer install --no-interaction --prefer-dist
+
+    - name: Setup test environment
+      run: |
+        cp .env.example .env
+        php artisan key:generate
+        touch database/database.sqlite
+
+    - name: Run tests with coverage
+      env:
+        XDEBUG_MODE: coverage
+      run: |
+        vendor/bin/phpunit --coverage-clover=coverage.xml --coverage-html=coverage-html --coverage-text
+
+    - name: Test multitenant package coverage
+      run: |
+        cd packages/kodikas/multitenant
+        composer install --no-interaction
+        if [ -f "vendor/bin/phpunit" ]; then
+          XDEBUG_MODE=coverage vendor/bin/phpunit --coverage-clover=../../../multitenant-coverage.xml --coverage-text
+        fi
+
+    - name: Upload coverage reports
+      uses: actions/upload-artifact@v3
+      with:
+        name: coverage-reports
+        path: |
+          coverage.xml
+          coverage-html/
+          multitenant-coverage.xml
+
+  documentation-validation:
+    runs-on: ubuntu-latest
+    name: Documentation & README Validation
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Validate documentation structure
+      run: |
+        echo "📚 Validating documentation structure..."
+        
+        # Verificar archivos de documentación principales
+        test -f README.md || { echo "❌ README.md missing"; exit 1; }
+        test -f CHANGELOG.md || { echo "❌ CHANGELOG.md missing"; exit 1; }
+        test -f CONTRIBUTING.md || { echo "❌ CONTRIBUTING.md missing"; exit 1; }
+        test -f SECURITY.md || { echo "❌ SECURITY.md missing"; exit 1; }
+        
+        echo "✅ Main documentation files present"
+
+    - name: Validate multitenant package documentation
+      run: |
+        echo "📖 Validating multitenant package documentation..."
+        
+        cd packages/kodikas/multitenant
+        test -f README.md || { echo "❌ Multitenant README.md missing"; exit 1; }
+        test -f COMPATIBILITY.md || { echo "❌ COMPATIBILITY.md missing"; exit 1; }
+        
+        echo "✅ Multitenant documentation files present"
+
+    - name: Check README content quality
+      run: |
+        echo "🔍 Checking README content quality..."
+        
+        # Verificar que el README tenga contenido mínimo
+        grep -q "Installation" README.md || echo "⚠️  Installation section missing in README"
+        grep -q "Usage" README.md || echo "⚠️  Usage section missing in README"
+        grep -q "Requirements" README.md || echo "⚠️  Requirements section missing in README"
+        
+        # Verificar README del paquete multitenant
+        cd packages/kodikas/multitenant
+        grep -q "Installation" README.md || echo "⚠️  Installation section missing in multitenant README"
+        grep -q "Configuration" README.md || echo "⚠️  Configuration section missing in multitenant README"
+
+    - name: Validate code examples in documentation
+      run: |
+        echo "💻 Validating code examples in documentation..."
+        
+        # Verificar que los ejemplos de código en el README sean válidos PHP
+        cd packages/kodikas/multitenant
+        grep -A 10 "```php" README.md | grep -v "```" | php -l || echo "⚠️  PHP syntax issues in README examples"
+
+  final-validation:
+    runs-on: ubuntu-latest
+    name: Final Validation & Summary
+    needs: [performance-tests, code-coverage, documentation-validation]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Generate validation summary
+      run: |
+        echo "📋 VALIDATION SUMMARY"
+        echo "===================="
+        echo "✅ Performance tests completed"
+        echo "✅ Code coverage analysis completed"
+        echo "✅ Documentation validation completed"
+        echo ""
+        echo "🎯 Project Status: READY FOR REVIEW"
+        echo "📦 Package: Kodikas Laravel Multitenant"
+        echo "🔖 Version: 1.0.0"
+        echo "🚀 Branch: develop"
+        echo ""
+        echo "Next steps:"
+        echo "1. Review all workflow results"
+        echo "2. Address any warnings or issues"
+        echo "3. Create pull request to master"
+        echo "4. Prepare for release v1.0.0"

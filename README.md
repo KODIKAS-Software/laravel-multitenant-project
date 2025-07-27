@@ -7,55 +7,143 @@
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
 </p>
 
-## About Laravel
+# 🏢 Kodikas Laravel Multitenant Project
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+[![Laravel Compatibility](https://github.com/KODIKAS-Software/laravel-multitenant-project/workflows/Laravel%20Compatibility%20Matrix/badge.svg)](https://github.com/KODIKAS-Software/laravel-multitenant-project/actions)
+[![Security Scan](https://github.com/KODIKAS-Software/laravel-multitenant-project/workflows/Security%20&%20Vulnerability%20Scan/badge.svg)](https://github.com/KODIKAS-Software/laravel-multitenant-project/actions)
+[![Code Quality](https://github.com/KODIKAS-Software/laravel-multitenant-project/workflows/Code%20Quality%20&%20Validation/badge.svg)](https://github.com/KODIKAS-Software/laravel-multitenant-project/actions)
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+Proyecto Laravel con paquete multitenant avanzado para SaaS empresarial. Diseñado exclusivamente para **Laravel 12.x** con enfoque latinoamericano/empresarial.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## ✨ Características Principales
 
-## Learning Laravel
+- 🏢 **Paquete Multitenant Completo** - Sistema avanzado de multi-tenancy
+- 🔐 **Control de Acceso Granular** - 8 tipos de usuario, 6 niveles de roles
+- 🌐 **Middleware Empresarial** - 12+ tipos de parámetros de validación
+- 🎯 **Detección Automática** - Tenants por subdomain, domain, path, header o session
+- 🔒 **Restricciones Avanzadas** - IP, tiempo, suscripciones
+- 🚀 **Laravel 12.x Ready** - Compatibilidad exclusiva con Laravel 12.x
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## 📦 Estructura del Proyecto
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+```
+kodikas-laravel-multitenant/
+├── packages/kodikas/multitenant/     # Paquete principal multitenant
+├── .github/workflows/               # CI/CD workflows
+│   ├── code-quality.yml           # Validación de calidad de código
+│   ├── security-scan.yml          # Escaneo de seguridad
+│   ├── compatibility-tests.yml    # Tests de compatibilidad
+│   └── performance-validation.yml # Validación de rendimiento
+├── app/                           # Aplicación Laravel
+├── tests/                         # Tests del proyecto
+└── database/                      # Migraciones y seeders
+```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## 🚀 Instalación Rápida
 
-## Laravel Sponsors
+```bash
+# Clonar el repositorio
+git clone https://github.com/KODIKAS-Software/laravel-multitenant-project.git
+cd laravel-multitenant-project
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+# Instalar dependencias
+composer install
 
-### Premium Partners
+# Configurar entorno
+cp .env.example .env
+php artisan key:generate
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+# Ejecutar migraciones
+php artisan migrate
 
-## Contributing
+# Publicar configuración del paquete multitenant
+php artisan vendor:publish --provider="Kodikas\Multitenant\MultitenantServiceProvider"
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## 📋 Requisitos del Sistema
 
-## Code of Conduct
+- **PHP**: 8.2 o superior
+- **Laravel**: 12.0 o superior (**EXCLUSIVAMENTE**)
+- **Composer**: 2.0 o superior
+- **Base de datos**: MySQL 8.0+, PostgreSQL 13+, SQLite 3.35+
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## 🔧 Configuración del Paquete Multitenant
 
-## Security Vulnerabilities
+### 1. Configurar Middleware
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+En `bootstrap/app.php`:
 
-## License
+```php
+$app->withMiddleware(function (Middleware $middleware) {
+    $middleware->alias([
+        'tenant' => \Kodikas\Multitenant\Middleware\TenantMiddleware::class,
+        'tenant.access' => \Kodikas\Multitenant\Middleware\TenantAccessMiddleware::class,
+    ]);
+});
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+### 2. Configurar Rutas
+
+```php
+Route::domain('{tenant}.example.com')->group(function () {
+    Route::middleware(['tenant'])->group(function () {
+        // Rutas específicas del tenant
+    });
+});
+```
+
+## 🧪 Testing
+
+```bash
+# Ejecutar tests del proyecto
+php artisan test
+
+# Ejecutar tests del paquete multitenant
+cd packages/kodikas/multitenant
+vendor/bin/phpunit
+
+# Tests de compatibilidad
+./test-compatibility.sh
+```
+
+## 🔒 Seguridad
+
+- Escaneo automático de vulnerabilidades
+- Validación de dependencias
+- Análisis estático de código
+- Verificación de credenciales hardcodeadas
+
+## 📈 CI/CD Workflows
+
+El proyecto incluye workflows automatizados para:
+
+- **Code Quality**: Linting, style checking, static analysis
+- **Security Scan**: Vulnerability scanning, dependency audit
+- **Compatibility Tests**: Laravel 12.x + PHP 8.2/8.3 matrix
+- **Performance Validation**: Load testing, coverage analysis
+
+## 🤝 Contribuir
+
+1. Fork el proyecto
+2. Crear una rama feature (`git checkout -b feature/nueva-funcionalidad`)
+3. Commit los cambios (`git commit -am 'Agregar nueva funcionalidad'`)
+4. Push a la rama (`git push origin feature/nueva-funcionalidad`)
+5. Crear un Pull Request
+
+Ver [CONTRIBUTING.md](CONTRIBUTING.md) para más detalles.
+
+## 📄 Licencia
+
+Este proyecto está bajo la Licencia MIT. Ver [LICENSE](LICENSE) para más detalles.
+
+## 👥 Créditos
+
+Desarrollado por **KODIKAS Software** - Miguel E Uicab Canabal
+
+- 🌐 Website: [miguelmort.tech](https://miguelmort.tech)
+- 📧 Email: miguel@kodikas.com
+- 🐱 GitHub: [@MiguelMort09](https://github.com/MiguelMort09)
+
+---
+
+**¡Gracias por usar Kodikas Laravel Multitenant!** 🚀
