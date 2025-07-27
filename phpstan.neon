@@ -3,9 +3,6 @@ parameters:
     paths:
         - packages/kodikas/multitenant/src
     tmpDir: build/phpstan
-    checkOctaneCompatibility: false
-    checkModelProperties: false
-    checkMissingIterableValueType: false
     treatPhpDocTypesAsCertain: false
     excludePaths:
         - packages/kodikas/multitenant/src/Traits/BelongsToTenant.php (?)
