@@ -1,4 +1,4 @@
-E<?php
+<?php
 
 namespace Kodikas\Multitenant\Console\Commands;
 
