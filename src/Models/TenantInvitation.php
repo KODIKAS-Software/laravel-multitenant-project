@@ -2,9 +2,9 @@
 
 namespace Kodikas\Multitenant\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Str;
 use Kodikas\Multitenant\Events\UserInvited;
 
@@ -34,8 +34,11 @@ class TenantInvitation extends Model
     ];
 
     const STATUS_PENDING = 'pending';
+
     const STATUS_ACCEPTED = 'accepted';
+
     const STATUS_EXPIRED = 'expired';
+
     const STATUS_CANCELLED = 'cancelled';
 
     protected static function boot()
@@ -43,11 +46,11 @@ class TenantInvitation extends Model
         parent::boot();
 
         static::creating(function ($invitation) {
-            if (!$invitation->token) {
+            if (! $invitation->token) {
                 $invitation->token = Str::random(40);
             }
 
-            if (!$invitation->expires_at) {
+            if (! $invitation->expires_at) {
                 $invitation->expires_at = now()->addDays(7);
             }
         });
@@ -82,7 +85,7 @@ class TenantInvitation extends Model
      */
     public function isPending(): bool
     {
-        return $this->status === self::STATUS_PENDING && !$this->isExpired();
+        return $this->status === self::STATUS_PENDING && ! $this->isExpired();
     }
 
     /**
@@ -90,7 +93,7 @@ class TenantInvitation extends Model
      */
     public function accept($user = null): bool
     {
-        if (!$this->isPending()) {
+        if (! $this->isPending()) {
             return false;
         }
 
@@ -130,7 +133,7 @@ class TenantInvitation extends Model
     public function scopePending($query)
     {
         return $query->where('status', self::STATUS_PENDING)
-                    ->where('expires_at', '>', now());
+            ->where('expires_at', '>', now());
     }
 
     /**
@@ -139,7 +142,7 @@ class TenantInvitation extends Model
     public function scopeExpired($query)
     {
         return $query->where('expires_at', '<=', now())
-                    ->orWhere('status', self::STATUS_EXPIRED);
+            ->orWhere('status', self::STATUS_EXPIRED);
     }
 
     /**

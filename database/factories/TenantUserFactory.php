@@ -3,8 +3,8 @@
 namespace Kodikas\Multitenant\Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Kodikas\Multitenant\Models\TenantUser;
 use Kodikas\Multitenant\Models\Tenant;
+use Kodikas\Multitenant\Models\TenantUser;
 
 /**
  * Factory para generar relaciones tenant-usuario de prueba
@@ -45,7 +45,7 @@ class TenantUserFactory extends Factory
             'access_restrictions' => [],
             'custom_data' => [
                 'department' => $this->faker->optional()->randomElement([
-                    'ventas', 'marketing', 'desarrollo', 'soporte', 'administracion'
+                    'ventas', 'marketing', 'desarrollo', 'soporte', 'administracion',
                 ]),
                 'position' => $this->faker->optional()->jobTitle(),
             ],
@@ -55,8 +55,6 @@ class TenantUserFactory extends Factory
     /**
      * Create owner user.
      * Crear usuario propietario
-     *
-     * @return static
      */
     public function owner(): static
     {
@@ -81,8 +79,6 @@ class TenantUserFactory extends Factory
     /**
      * Create admin user.
      * Crear usuario administrador
-     *
-     * @return static
      */
     public function admin(): static
     {
@@ -104,8 +100,6 @@ class TenantUserFactory extends Factory
     /**
      * Create employee user.
      * Crear usuario empleado
-     *
-     * @return static
      */
     public function employee(): static
     {
@@ -122,8 +116,6 @@ class TenantUserFactory extends Factory
     /**
      * Create client user.
      * Crear usuario cliente
-     *
-     * @return static
      */
     public function client(): static
     {
@@ -141,8 +133,6 @@ class TenantUserFactory extends Factory
     /**
      * Create vendor user.
      * Crear usuario proveedor
-     *
-     * @return static
      */
     public function vendor(): static
     {
@@ -160,8 +150,6 @@ class TenantUserFactory extends Factory
     /**
      * Create inactive user.
      * Crear usuario inactivo
-     *
-     * @return static
      */
     public function inactive(): static
     {
@@ -173,8 +161,6 @@ class TenantUserFactory extends Factory
     /**
      * Create suspended user.
      * Crear usuario suspendido
-     *
-     * @return static
      */
     public function suspended(): static
     {
@@ -186,8 +172,6 @@ class TenantUserFactory extends Factory
     /**
      * Add access restrictions.
      * Agregar restricciones de acceso
-     *
-     * @return static
      */
     public function withAccessRestrictions(): static
     {

@@ -5,7 +5,6 @@ namespace Kodikas\Multitenant\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Kodikas\Multitenant\Facades\Tenant;
-use Kodikas\Multitenant\Exceptions\TenantNotResolvedException;
 
 class EnsureTenantMiddleware
 {
@@ -14,19 +13,19 @@ class EnsureTenantMiddleware
      */
     public function handle(Request $request, Closure $next)
     {
-        if (!Tenant::check()) {
+        if (! Tenant::check()) {
             return $this->handleMissingTenant($request);
         }
 
         $tenant = Tenant::current();
 
         // Check if tenant is active
-        if (!$tenant->isActive()) {
+        if (! $tenant->isActive()) {
             return $this->handleInactiveTenant($request, $tenant);
         }
 
         // Check subscription status
-        if (!$this->hasValidSubscription($tenant)) {
+        if (! $this->hasValidSubscription($tenant)) {
             return $this->handleInvalidSubscription($request, $tenant);
         }
 
@@ -41,12 +40,13 @@ class EnsureTenantMiddleware
         if ($request->expectsJson()) {
             return response()->json([
                 'error' => 'Tenant not found',
-                'message' => 'No valid tenant could be identified for this request'
+                'message' => 'No valid tenant could be identified for this request',
             ], 404);
         }
 
         // Redirect to tenant selection or central domain
         $centralDomain = config('multitenant.central_domain');
+
         return redirect()->to("http://{$centralDomain}");
     }
 
@@ -58,7 +58,7 @@ class EnsureTenantMiddleware
         if ($request->expectsJson()) {
             return response()->json([
                 'error' => 'Tenant inactive',
-                'message' => 'This tenant is currently inactive'
+                'message' => 'This tenant is currently inactive',
             ], 403);
         }
 
@@ -73,7 +73,7 @@ class EnsureTenantMiddleware
         if ($request->expectsJson()) {
             return response()->json([
                 'error' => 'Subscription required',
-                'message' => 'A valid subscription is required to access this tenant'
+                'message' => 'A valid subscription is required to access this tenant',
             ], 402);
         }
 
@@ -85,7 +85,7 @@ class EnsureTenantMiddleware
      */
     protected function hasValidSubscription($tenant): bool
     {
-        if (!config('multitenant.billing.enabled')) {
+        if (! config('multitenant.billing.enabled')) {
             return true;
         }
 

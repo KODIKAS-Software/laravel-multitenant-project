@@ -21,7 +21,7 @@ Route::group(['prefix' => 'tenant/invitation'], function () {
 // Rutas protegidas para administración de tenants
 Route::group([
     'prefix' => 'tenant/admin',
-    'middleware' => ['auth', 'tenant.identify', 'tenant.ensure']
+    'middleware' => ['auth', 'tenant.identify', 'tenant.ensure'],
 ], function () {
 
     // Dashboard principal
@@ -83,13 +83,13 @@ Route::group([
 
 // Rutas específicas por tipo de usuario
 Route::group([
-    'middleware' => ['auth', 'tenant.identify', 'tenant.ensure']
+    'middleware' => ['auth', 'tenant.identify', 'tenant.ensure'],
 ], function () {
 
     // Panel para empleados
     Route::group([
         'prefix' => 'employee',
-        'middleware' => 'tenant.access:type:employee'
+        'middleware' => 'tenant.access:type:employee',
     ], function () {
         Route::get('dashboard', function () {
             return view('multitenant::employee.dashboard');
@@ -99,7 +99,7 @@ Route::group([
     // Portal para clientes
     Route::group([
         'prefix' => 'client',
-        'middleware' => 'tenant.access:type:client'
+        'middleware' => 'tenant.access:type:client',
     ], function () {
         Route::get('dashboard', function () {
             return view('multitenant::client.dashboard');
@@ -114,7 +114,7 @@ Route::group([
     // Portal para proveedores
     Route::group([
         'prefix' => 'vendor',
-        'middleware' => 'tenant.access:type:vendor'
+        'middleware' => 'tenant.access:type:vendor',
     ], function () {
         Route::get('dashboard', function () {
             return view('multitenant::vendor.dashboard');
@@ -129,7 +129,7 @@ Route::group([
     // Portal para socios
     Route::group([
         'prefix' => 'partner',
-        'middleware' => 'tenant.access:type:partner'
+        'middleware' => 'tenant.access:type:partner',
     ], function () {
         Route::get('dashboard', function () {
             return view('multitenant::partner.dashboard');
@@ -140,20 +140,21 @@ Route::group([
 // API Routes para diferentes tipos de usuario
 Route::group([
     'prefix' => 'api/tenant',
-    'middleware' => ['auth:sanctum', 'tenant.identify', 'tenant.ensure']
+    'middleware' => ['auth:sanctum', 'tenant.identify', 'tenant.ensure'],
 ], function () {
 
     // API para clientes
     Route::group([
         'prefix' => 'client',
-        'middleware' => 'tenant.access:type:client'
+        'middleware' => 'tenant.access:type:client',
     ], function () {
         Route::get('profile', function () {
             $user = auth()->user();
             $tenant = app('tenant')->current();
+
             return response()->json([
                 'user' => $user,
-                'tenant_info' => $user->getTenantAccessStats($tenant)
+                'tenant_info' => $user->getTenantAccessStats($tenant),
             ]);
         });
 
@@ -166,7 +167,7 @@ Route::group([
     // API para empleados
     Route::group([
         'prefix' => 'employee',
-        'middleware' => 'tenant.access:type:employee'
+        'middleware' => 'tenant.access:type:employee',
     ], function () {
         Route::get('dashboard-stats', function () {
             $user = auth()->user();
@@ -193,7 +194,7 @@ Route::group([
     // API para proveedores
     Route::group([
         'prefix' => 'vendor',
-        'middleware' => 'tenant.access:type:vendor'
+        'middleware' => 'tenant.access:type:vendor',
     ], function () {
         Route::get('products', function () {
             // Solo productos del proveedor actual
@@ -206,9 +207,9 @@ Route::group([
             $tenantUser = $user->getTenantUser($tenant);
 
             // Verificar límites de productos
-            if (!$tenantUser->canPerform('create_product', ['current_products' => 0])) {
+            if (! $tenantUser->canPerform('create_product', ['current_products' => 0])) {
                 return response()->json([
-                    'error' => 'Límite de productos alcanzado'
+                    'error' => 'Límite de productos alcanzado',
                 ], 403);
             }
 
