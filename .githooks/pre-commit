@@ -1,0 +1,88 @@
+#!/bin/bash
+# Pre-commit hook para validar código antes de commit
+
+set -e
+
+echo "🔍 Ejecutando validaciones pre-commit..."
+
+# Verificar que estamos en el directorio correcto
+if [ ! -f "composer.json" ]; then
+    echo "❌ Error: No se encontró composer.json. Ejecuta desde el directorio raíz del proyecto."
+    exit 1
+fi
+
+# 1. Validar sintaxis PHP
+echo "📝 Validando sintaxis PHP..."
+find packages/kodikas/multitenant/src -name "*.php" -exec php -l {} \; > /dev/null
+if [ $? -ne 0 ]; then
+    echo "❌ Error de sintaxis PHP encontrado!"
+    exit 1
+fi
+
+# 2. Ejecutar PHP CS Fixer
+if [ -f "vendor/bin/php-cs-fixer" ]; then
+    echo "🎨 Aplicando estilo de código PHP..."
+    vendor/bin/php-cs-fixer fix packages/kodikas/multitenant/src --dry-run --diff
+    if [ $? -ne 0 ]; then
+        echo "❌ Problemas de estilo de código encontrados!"
+        echo "💡 Ejecuta: vendor/bin/php-cs-fixer fix packages/kodikas/multitenant/src"
+        exit 1
+    fi
+fi
+
+# 3. Ejecutar PHPStan
+if [ -f "vendor/bin/phpstan" ]; then
+    echo "🔍 Ejecutando análisis estático..."
+    vendor/bin/phpstan analyse packages/kodikas/multitenant/src --level=5 --no-progress
+    if [ $? -ne 0 ]; then
+        echo "❌ Problemas de análisis estático encontrados!"
+        exit 1
+    fi
+fi
+
+# 4. Ejecutar tests unitarios del paquete
+echo "🧪 Ejecutando tests unitarios..."
+cd packages/kodikas/multitenant
+../../../vendor/bin/phpunit --testsuite="Multitenant Unit Tests" --stop-on-failure
+if [ $? -ne 0 ]; then
+    echo "❌ Tests unitarios fallaron!"
+    exit 1
+fi
+cd - > /dev/null
+
+# 5. Validar formato de commits
+echo "📋 Validando formato de commit..."
+commit_regex='^(feat|fix|docs|style|refactor|test|chore|perf|ci|build|revert)(\(.+\))?: .{1,50}'
+commit_msg=$(cat .git/COMMIT_EDITMSG 2>/dev/null || echo "")
+
+if [ -n "$commit_msg" ] && ! echo "$commit_msg" | grep -qE "$commit_regex"; then
+    echo "❌ Formato de commit inválido!"
+    echo "💡 Usa el formato: type(scope): description"
+    echo "💡 Ejemplo: feat(auth): add JWT authentication"
+    echo "💡 Tipos válidos: feat, fix, docs, style, refactor, test, chore, perf, ci, build, revert"
+    exit 1
+fi
+
+# 6. Verificar que no hay archivos sensibles
+echo "🔒 Verificando archivos sensibles..."
+sensitive_files=(
+    ".env"
+    "*.key"
+    "*.pem"
+    "*.p12"
+    "*.pfx"
+    "*password*"
+    "*secret*"
+    "*token*"
+)
+
+for pattern in "${sensitive_files[@]}"; do
+    if git diff --cached --name-only | grep -i "$pattern" > /dev/null; then
+        echo "❌ Archivo sensible detectado: $pattern"
+        echo "💡 Asegúrate de no commitear información sensible"
+        exit 1
+    fi
+done
+
+echo "✅ Todas las validaciones pasaron!"
+echo "🚀 Procediendo con el commit..."

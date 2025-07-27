@@ -1,0 +1,138 @@
+name: Feature Request / Solicitud de Característica
+description: Suggest a new feature or enhancement / Sugiere una nueva característica o mejora
+title: "[FEATURE] "
+labels: ["enhancement", "needs-discussion"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ¡Gracias por sugerir una nueva característica! Esto nos ayuda a mejorar el paquete multitenant.
+        
+        *Thank you for suggesting a new feature! This helps us improve the multitenant package.*
+
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmaciones / Confirmations
+      description: Por favor confirma lo siguiente / Please confirm the following
+      options:
+        - label: He verificado que esta característica no existe / I have verified this feature doesn't exist
+          required: true
+        - label: He buscado en issues existentes / I have searched existing issues
+          required: true
+        - label: Esta característica beneficiaría a múltiples usuarios / This feature would benefit multiple users
+          required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problema que Resuelve / Problem it Solves
+      description: Describe el problema o necesidad que esta característica resolvería / Describe the problem or need this feature would solve
+      placeholder: Como [tipo de usuario], necesito [funcionalidad] para [objetivo]... / As a [user type], I need [functionality] to [goal]...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Solución Propuesta / Proposed Solution
+      description: Describe la solución que tienes en mente / Describe the solution you have in mind
+      placeholder: La característica debería... / The feature should...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: feature-category
+    attributes:
+      label: Categoría de Característica / Feature Category
+      description: ¿A qué área del paquete pertenece? / What area of the package does this belong to?
+      options:
+        - "Authentication & Authorization / Autenticación y Autorización"
+        - "Tenant Management / Gestión de Tenants"
+        - "User Management / Gestión de Usuarios"
+        - "Database & Migrations / Base de Datos y Migraciones"
+        - "API & Integrations / API e Integraciones"
+        - "Admin Panel / Panel Administrativo"
+        - "Billing & Subscriptions / Facturación y Suscripciones"
+        - "Security / Seguridad"
+        - "Performance / Rendimiento"
+        - "Documentation / Documentación"
+        - "Other / Otro"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: user-types
+    attributes:
+      label: Tipos de Usuario Afectados / Affected User Types
+      description: ¿Qué tipos de usuario se beneficiarían? / What user types would benefit?
+      options:
+        - label: Owner / Propietario
+        - label: Admin / Administrador
+        - label: Employee / Empleado
+        - label: Client / Cliente
+        - label: Vendor / Proveedor
+        - label: Partner / Socio
+        - label: Consultant / Consultor
+        - label: Guest / Invitado
+        - label: All users / Todos los usuarios
+
+  - type: textarea
+    id: use-cases
+    attributes:
+      label: Casos de Uso / Use Cases
+      description: Proporciona ejemplos específicos de cómo se usaría / Provide specific examples of how it would be used
+      placeholder: |
+        1. Un administrador necesita...
+        2. Un cliente quiere...
+        3. Un empleado debe poder...
+        
+        1. An admin needs to...
+        2. A client wants to...
+        3. An employee should be able to...
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternativas Consideradas / Alternatives Considered
+      description: ¿Has considerado otras soluciones? / Have you considered other solutions?
+      placeholder: También consideré... / I also considered...
+
+  - type: dropdown
+    id: complexity
+    attributes:
+      label: Complejidad Estimada / Estimated Complexity
+      description: ¿Qué tan compleja crees que sería la implementación? / How complex do you think the implementation would be?
+      options:
+        - "Low / Baja - Simple configuration or small addition"
+        - "Medium / Media - Requires new functionality but straightforward"
+        - "High / Alta - Complex feature requiring significant changes"
+        - "Very High / Muy Alta - Major architectural changes"
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Prioridad / Priority
+      description: ¿Qué tan importante es esta característica? / How important is this feature?
+      options:
+        - "Low / Baja - Nice to have"
+        - "Medium / Media - Would improve user experience"
+        - "High / Alta - Important for many use cases"
+        - "Critical / Crítica - Blocking current use cases"
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Información Adicional / Additional Information
+      description: Cualquier otra información relevante / Any other relevant information
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribución / Contribution
+      description: ¿Estarías dispuesto a contribuir? / Would you be willing to contribute?
+      options:
+        - label: Estaría dispuesto a ayudar con la implementación / I would be willing to help with implementation
+        - label: Puedo ayudar con testing / I can help with testing
+        - label: Puedo ayudar con documentación / I can help with documentation
+        - label: Solo puedo proporcionar feedback / I can only provide feedback

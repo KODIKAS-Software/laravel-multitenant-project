@@ -1,0 +1,193 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  PHP_VERSION: 8.2
+  NODE_VERSION: 18
+  COMPOSER_CACHE: ~/.composer/cache
+
+jobs:
+  # Job de validación de código
+  code-quality:
+    name: Code Quality & Security
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ env.PHP_VERSION }}
+        extensions: mbstring, xml, ctype, iconv, intl, pdo_sqlite, dom, filter, gd, iconv, json, mbstring, pdo
+        coverage: xdebug
+
+    - name: Cache Composer packages
+      uses: actions/cache@v3
+      with:
+        path: ${{ env.COMPOSER_CACHE }}
+        key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+        restore-keys: ${{ runner.os }}-composer-
+
+    - name: Install Composer dependencies
+      run: composer install --no-progress --prefer-dist --optimize-autoloader
+
+    - name: Run PHP CodeSniffer
+      run: ./vendor/bin/phpcs --standard=PSR12 packages/kodikas/multitenant/src
+
+    - name: Run PHP Stan
+      run: ./vendor/bin/phpstan analyse packages/kodikas/multitenant/src --level=5
+
+    - name: Run Security Checker
+      run: composer audit
+
+  # Job de tests
+  tests:
+    name: Tests (PHP ${{ matrix.php }}, Laravel ${{ matrix.laravel }})
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        php: [8.2, 8.3]
+        laravel: [10.x, 11.x, 12.x]
+        include:
+          - laravel: 10.x
+            testbench: 8.x
+          - laravel: 11.x
+            testbench: 9.x
+          - laravel: 12.x
+            testbench: 10.x
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: testing
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ matrix.php }}
+        extensions: mbstring, xml, ctype, iconv, intl, pdo_sqlite, pdo_mysql, dom, filter, gd, iconv, json, mbstring
+        coverage: xdebug
+
+    - name: Cache Composer packages
+      uses: actions/cache@v3
+      with:
+        path: ${{ env.COMPOSER_CACHE }}
+        key: ${{ runner.os }}-php${{ matrix.php }}-composer-${{ hashFiles('**/composer.lock') }}
+        restore-keys: ${{ runner.os }}-php${{ matrix.php }}-composer-
+
+    - name: Install Composer dependencies
+      run: |
+        composer require "laravel/framework:${{ matrix.laravel }}" "orchestra/testbench:${{ matrix.testbench }}" --no-interaction --no-update
+        composer install --no-progress --prefer-dist --optimize-autoloader
+
+    - name: Copy environment file
+      run: cp .env.example .env
+
+    - name: Generate application key
+      run: php artisan key:generate
+
+    - name: Create SQLite database
+      run: touch database/database.sqlite
+
+    - name: Run migrations
+      run: php artisan migrate --env=testing
+
+    - name: Run package tests
+      run: |
+        cd packages/kodikas/multitenant
+        ../../../vendor/bin/phpunit --coverage-clover=coverage.xml
+
+    - name: Run application tests
+      run: php artisan test --coverage
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./packages/kodikas/multitenant/coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+
+  # Job de build y validación de assets
+  frontend:
+    name: Frontend Build & Validation
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Install npm dependencies
+      run: npm ci
+
+    - name: Run ESLint
+      run: npm run lint
+
+    - name: Build assets
+      run: npm run build
+
+    - name: Check for security vulnerabilities
+      run: npm audit --audit-level moderate
+
+  # Job de release automático (solo en main)
+  release:
+    name: Create Release
+    needs: [code-quality, tests, frontend]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+
+    - name: Install semantic-release
+      run: npm install -g semantic-release @semantic-release/changelog @semantic-release/git
+
+    - name: Create Release
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: npx semantic-release
+
+  # Job de deployment a Packagist (solo releases)
+  deploy:
+    name: Deploy to Packagist
+    needs: [release]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+
+    steps:
+    - name: Trigger Packagist update
+      run: |
+        curl -XPOST -H'content-type:application/json' \
+          'https://packagist.org/api/update-package?username=${{ secrets.PACKAGIST_USERNAME }}&apiToken=${{ secrets.PACKAGIST_TOKEN }}' \
+          -d'{"repository":{"url":"https://github.com/kodikas/laravel-multitenant"}}'
