@@ -72,7 +72,7 @@ class Tenant extends Model
     /**
      * Resolve a connection instance for the model.
      */
-    public function resolveConnection($connection = null)
+    public static function resolveConnection($connection = null)
     {
         // During testing, force use of testing connection
         if (app()->environment('testing')) {
