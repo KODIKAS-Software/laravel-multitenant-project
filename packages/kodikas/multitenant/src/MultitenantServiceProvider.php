@@ -3,12 +3,11 @@
 namespace Kodikas\Multitenant;
 
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\Route;
 use Kodikas\Multitenant\Console\Commands\TenantMakeCommand;
 use Kodikas\Multitenant\Console\Commands\TenantMigrateCommand;
 use Kodikas\Multitenant\Console\Commands\TenantSeedCommand;
-use Kodikas\Multitenant\Http\Middleware\IdentifyTenantMiddleware;
 use Kodikas\Multitenant\Http\Middleware\EnsureTenantMiddleware;
+use Kodikas\Multitenant\Http\Middleware\IdentifyTenantMiddleware;
 use Kodikas\Multitenant\Http\Middleware\TenantAccessControlMiddleware;
 
 class MultitenantServiceProvider extends ServiceProvider

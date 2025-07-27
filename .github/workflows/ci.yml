@@ -2,9 +2,10 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ develop, master ]
+    branches: [ develop, master, main ]
   pull_request:
-    branches: [ develop, master ]
+    branches: [ develop, master, main ]
+  workflow_dispatch:
 
 jobs:
   tests:
@@ -25,13 +26,15 @@ jobs:
       with:
         php-version: ${{ matrix.php }}
         extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv
-        coverage: none
+        coverage: xdebug
 
     - name: Cache Composer dependencies
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/.composer/cache
         key: php-${{ matrix.php }}-composer-${{ hashFiles('**/composer.lock') }}
+        restore-keys: |
+          php-${{ matrix.php }}-composer-
 
     - name: Install dependencies
       run: composer install --no-interaction --prefer-dist --optimize-autoloader
@@ -51,11 +54,11 @@ jobs:
         DB_DATABASE: database/database.sqlite
       run: php artisan migrate --force
 
-    - name: Run tests
+    - name: Run tests with coverage
       env:
         DB_CONNECTION: sqlite
         DB_DATABASE: database/database.sqlite
-      run: vendor/bin/phpunit
+      run: vendor/bin/phpunit --coverage-clover coverage.xml
 
     - name: Test multitenant package
       run: |
@@ -66,6 +69,13 @@ jobs:
             vendor/bin/phpunit
           fi
         fi
+
+    - name: Upload coverage to Codecov
+      if: matrix.php == '8.3'
+      uses: codecov/codecov-action@v4
+      with:
+        file: ./coverage.xml
+        fail_ci_if_error: false
 
   code-quality:
     runs-on: ubuntu-latest
@@ -78,8 +88,16 @@ jobs:
     - name: Setup PHP
       uses: shivammathur/setup-php@v2
       with:
-        php-version: 8.2
+        php-version: 8.3
         extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv
+
+    - name: Cache Composer dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.composer/cache
+        key: php-8.3-composer-${{ hashFiles('**/composer.lock') }}
+        restore-keys: |
+          php-8.3-composer-
 
     - name: Install dependencies
       run: composer install --no-interaction --prefer-dist
@@ -93,5 +111,15 @@ jobs:
         fi
 
     - name: Validate composer.json
+      run: composer validate --strict
+
+    - name: Check for security vulnerabilities
+      run: composer audit --format=plain
+
+    - name: Static Analysis with PHPStan
       run: |
-        composer validate --strict
+        if [ -f "vendor/bin/phpstan" ]; then
+          vendor/bin/phpstan analyse --level=5 app packages/kodikas/multitenant/src
+        else
+          echo "PHPStan not available, consider adding it for static analysis"
+        fi

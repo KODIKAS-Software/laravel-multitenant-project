@@ -4,10 +4,10 @@ namespace Kodikas\Multitenant\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
-use Kodikas\Multitenant\Models\Tenant;
-use Kodikas\Multitenant\Models\TenantUser;
-use Kodikas\Multitenant\Models\TenantInvitation;
 use Kodikas\Multitenant\Facades\Tenant as TenantFacade;
+use Kodikas\Multitenant\Models\Tenant;
+use Kodikas\Multitenant\Models\TenantInvitation;
+use Kodikas\Multitenant\Models\TenantUser;
 
 class TenantAdminController extends Controller
 {
@@ -100,7 +100,7 @@ class TenantAdminController extends Controller
 
         // Verificar límites
         $currentUsers = $tenant->users()->count();
-        if (!$tenant->canPerform('users', $currentUsers)) {
+        if (! $tenant->canPerform('users', $currentUsers)) {
             return back()->with('error', 'Has alcanzado el límite de usuarios para tu plan actual.');
         }
 
@@ -133,14 +133,14 @@ class TenantAdminController extends Controller
 
         $request->validate([
             'email' => 'required|email',
-            'role' => 'required|in:' . implode(',', array_keys([
+            'role' => 'required|in:'.implode(',', array_keys([
                 TenantUser::ROLE_ADMIN => 'Administrador',
                 TenantUser::ROLE_MANAGER => 'Gerente',
                 TenantUser::ROLE_EMPLOYEE => 'Empleado',
                 TenantUser::ROLE_CLIENT => 'Cliente',
                 TenantUser::ROLE_VIEWER => 'Observador',
             ])),
-            'user_type' => 'required|in:' . implode(',', [
+            'user_type' => 'required|in:'.implode(',', [
                 TenantUser::TYPE_ADMIN,
                 TenantUser::TYPE_EMPLOYEE,
                 TenantUser::TYPE_CLIENT,
@@ -163,7 +163,7 @@ class TenantAdminController extends Controller
 
         // Verificar límites
         $currentUsers = $tenant->users()->count();
-        if (!$tenant->canPerform('users', $currentUsers)) {
+        if (! $tenant->canPerform('users', $currentUsers)) {
             return back()->with('error', 'Has alcanzado el límite de usuarios para tu plan actual.');
         }
 
@@ -179,7 +179,7 @@ class TenantAdminController extends Controller
         // event(new UserInvited($invitation));
 
         return redirect()->route('tenant.admin.users')
-            ->with('success', 'Invitación enviada exitosamente a ' . $request->email);
+            ->with('success', 'Invitación enviada exitosamente a '.$request->email);
     }
 
     /**
@@ -190,7 +190,7 @@ class TenantAdminController extends Controller
         $tenant = TenantFacade::current();
 
         $request->validate([
-            'user_type' => 'required|in:' . implode(',', [
+            'user_type' => 'required|in:'.implode(',', [
                 TenantUser::TYPE_ADMIN,
                 TenantUser::TYPE_EMPLOYEE,
                 TenantUser::TYPE_CLIENT,
@@ -198,14 +198,14 @@ class TenantAdminController extends Controller
                 TenantUser::TYPE_PARTNER,
                 TenantUser::TYPE_CONSULTANT,
             ]),
-            'role' => 'required|in:' . implode(',', [
+            'role' => 'required|in:'.implode(',', [
                 TenantUser::ROLE_ADMIN,
                 TenantUser::ROLE_MANAGER,
                 TenantUser::ROLE_EMPLOYEE,
                 TenantUser::ROLE_CLIENT,
                 TenantUser::ROLE_VIEWER,
             ]),
-            'status' => 'required|in:' . implode(',', [
+            'status' => 'required|in:'.implode(',', [
                 TenantUser::STATUS_ACTIVE,
                 TenantUser::STATUS_INACTIVE,
                 TenantUser::STATUS_SUSPENDED,

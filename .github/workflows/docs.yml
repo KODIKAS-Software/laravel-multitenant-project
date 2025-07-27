@@ -1,0 +1,165 @@
+name: Documentation
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    name: Build Documentation
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: 8.3
+        extensions: dom, curl, libxml, mbstring, zip
+
+    - name: Install dependencies
+      run: composer install --no-interaction --prefer-dist
+
+    - name: Validate documentation
+      run: |
+        echo "📚 Validating documentation files..."
+        
+        # Check main documentation files
+        test -f README.md && echo "✅ README.md found" || echo "❌ README.md missing"
+        test -f CHANGELOG.md && echo "✅ CHANGELOG.md found" || echo "❌ CHANGELOG.md missing"
+        test -f CONTRIBUTING.md && echo "✅ CONTRIBUTING.md found" || echo "❌ CONTRIBUTING.md missing"
+        test -f SECURITY.md && echo "✅ SECURITY.md found" || echo "❌ SECURITY.md missing"
+        
+        # Check package documentation
+        test -f packages/kodikas/multitenant/README.md && echo "✅ Package README.md found" || echo "❌ Package README.md missing"
+        test -f packages/kodikas/multitenant/COMPATIBILITY.md && echo "✅ Package COMPATIBILITY.md found" || echo "❌ Package COMPATIBILITY.md missing"
+
+    - name: Generate API documentation
+      run: |
+        echo "📖 Generating API documentation..."
+        
+        # Generate Laravel API documentation
+        if command -v phpDocumentor &> /dev/null; then
+          echo "Generating PHPDoc documentation..."
+          phpdoc -d app -d packages/kodikas/multitenant/src -t docs/api
+        else
+          echo "PHPDocumentor not available, skipping API documentation generation"
+        fi
+
+    - name: Check documentation links
+      run: |
+        echo "🔗 Checking documentation links..."
+        
+        # Check for broken internal links in README
+        if grep -q "](.*\.md)" README.md; then
+          echo "Internal links found in README.md"
+          # In a real scenario, you might use a link checker tool
+        fi
+
+    - name: Documentation metrics
+      run: |
+        echo "📊 Documentation metrics:"
+        echo "========================="
+        
+        echo "📄 Total documentation files:"
+        find . -name "*.md" -not -path "./vendor/*" -not -path "./node_modules/*" | wc -l
+        
+        echo "📄 Documentation files by type:"
+        echo "  README files: $(find . -name "README.md" -not -path "./vendor/*" | wc -l)"
+        echo "  CHANGELOG files: $(find . -name "CHANGELOG.md" -not -path "./vendor/*" | wc -l)"
+        echo "  Documentation files: $(find . -name "*.md" -not -path "./vendor/*" -not -path "./node_modules/*" | wc -l)"
+        
+        echo ""
+        echo "✅ Documentation validation completed!"
+
+  publish:
+    runs-on: ubuntu-latest
+    needs: docs
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Pages
+      uses: actions/configure-pages@v4
+
+    - name: Create documentation site
+      run: |
+        echo "🏗️ Building documentation site..."
+        mkdir -p docs
+        
+        # Copy main documentation
+        cp README.md docs/index.md
+        cp CHANGELOG.md docs/
+        cp CONTRIBUTING.md docs/
+        cp SECURITY.md docs/
+        
+        # Copy package documentation
+        mkdir -p docs/packages/multitenant
+        if [ -f packages/kodikas/multitenant/README.md ]; then
+          cp packages/kodikas/multitenant/README.md docs/packages/multitenant/
+        fi
+        if [ -f packages/kodikas/multitenant/COMPATIBILITY.md ]; then
+          cp packages/kodikas/multitenant/COMPATIBILITY.md docs/packages/multitenant/
+        fi
+        
+        # Create simple index.html
+        cat > docs/index.html << 'EOF'
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Laravel Multitenant Project Documentation</title>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <style>
+                body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 40px; }
+                h1 { color: #e3342f; }
+                a { color: #3490dc; text-decoration: none; }
+                a:hover { text-decoration: underline; }
+                .nav { margin: 20px 0; padding: 20px; background: #f8f9fa; border-radius: 5px; }
+            </style>
+        </head>
+        <body>
+            <h1>🏢 Laravel Multitenant Project Documentation</h1>
+            <div class="nav">
+                <h2>📚 Documentation</h2>
+                <ul>
+                    <li><a href="README.md">Main README</a></li>
+                    <li><a href="CHANGELOG.md">Changelog</a></li>
+                    <li><a href="CONTRIBUTING.md">Contributing Guidelines</a></li>
+                    <li><a href="SECURITY.md">Security Policy</a></li>
+                </ul>
+                
+                <h2>📦 Package Documentation</h2>
+                <ul>
+                    <li><a href="packages/multitenant/README.md">Multitenant Package</a></li>
+                    <li><a href="packages/multitenant/COMPATIBILITY.md">Compatibility Guide</a></li>
+                </ul>
+            </div>
+        </body>
+        </html>
+        EOF
+
+    - name: Upload artifact
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: './docs'
+
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4

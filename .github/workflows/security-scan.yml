@@ -2,11 +2,12 @@ name: Security Scan
 
 on:
   push:
-    branches: [ develop, master ]
+    branches: [ develop, master, main ]
   pull_request:
-    branches: [ develop, master ]
+    branches: [ develop, master, main ]
   schedule:
     - cron: '0 2 * * 1' # Weekly scan on Mondays
+  workflow_dispatch:
 
 jobs:
   security:
@@ -20,8 +21,16 @@ jobs:
     - name: Setup PHP
       uses: shivammathur/setup-php@v2
       with:
-        php-version: 8.2
+        php-version: 8.3
         extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv
+
+    - name: Cache Composer dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.composer/cache
+        key: php-8.3-composer-${{ hashFiles('**/composer.lock') }}
+        restore-keys: |
+          php-8.3-composer-
 
     - name: Install dependencies
       run: composer install --no-interaction --prefer-dist --no-dev

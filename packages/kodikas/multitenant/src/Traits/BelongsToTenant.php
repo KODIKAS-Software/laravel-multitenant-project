@@ -17,7 +17,7 @@ class TenantScope implements Scope
         $strategy = config('multitenant.database_strategy');
 
         if ($strategy === 'single_database' && Tenant::check()) {
-            $builder->where($model->getTable() . '.tenant_id', Tenant::current()->id);
+            $builder->where($model->getTable().'.tenant_id', Tenant::current()->id);
         }
     }
 }
@@ -32,7 +32,7 @@ trait BelongsToTenant
         static::addGlobalScope(new TenantScope);
 
         static::creating(function ($model) {
-            if (Tenant::check() && !$model->tenant_id) {
+            if (Tenant::check() && ! $model->tenant_id) {
                 $model->tenant_id = Tenant::current()->id;
             }
         });
@@ -60,6 +60,6 @@ trait BelongsToTenant
     public function scopeForTenant($query, $tenantId)
     {
         return $query->withoutGlobalScope(TenantScope::class)
-                    ->where('tenant_id', $tenantId);
+            ->where('tenant_id', $tenantId);
     }
 }
