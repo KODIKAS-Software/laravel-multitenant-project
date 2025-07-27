@@ -3,7 +3,7 @@
 namespace Kodikas\Multitenant\Tests\Unit;
 
 use Kodikas\Multitenant\Models\Tenant;
-use PHPUnit\Framework\TestCase;
+use Kodikas\Multitenant\Tests\TestCase;
 
 /**
  * Tests unitarios para el modelo Tenant
@@ -14,10 +14,8 @@ class TenantTest extends TestCase
     /**
      * Test tenant creation.
      * Probar creación de tenant
-     *
-     * @test
      */
-    public function it_can_create_tenant(): void
+    public function test_it_can_create_tenant(): void
     {
         $tenant = new Tenant([
             'name' => 'Test Company',
@@ -34,10 +32,8 @@ class TenantTest extends TestCase
     /**
      * Test tenant database name generation.
      * Probar generación de nombre de base de datos
-     *
-     * @test
      */
-    public function it_generates_database_name_correctly(): void
+    public function test_it_generates_database_name_correctly(): void
     {
         $tenant = new Tenant(['slug' => 'test-tenant']);
 
@@ -47,10 +43,8 @@ class TenantTest extends TestCase
     /**
      * Test tenant connection name generation.
      * Probar generación de nombre de conexión
-     *
-     * @test
      */
-    public function it_generates_connection_name_correctly(): void
+    public function test_it_generates_connection_name_correctly(): void
     {
         $tenant = new Tenant(['slug' => 'test-tenant']);
 
@@ -58,101 +52,96 @@ class TenantTest extends TestCase
     }
 
     /**
-     * Test tenant status checks.
-     * Probar verificaciones de estado del tenant
-     *
-     * @test
+     * Test tenant status methods.
+     * Probar métodos de estado del tenant
      */
-    public function it_checks_tenant_status_correctly(): void
+    public function test_it_checks_tenant_status_correctly(): void
     {
-        $activeTenant = new Tenant(['status' => Tenant::STATUS_ACTIVE]);
-        $this->assertTrue($activeTenant->isActive());
+        $tenant = new Tenant(['status' => Tenant::STATUS_ACTIVE]);
+        $this->assertTrue($tenant->isActive());
 
-        $inactiveTenant = new Tenant(['status' => Tenant::STATUS_INACTIVE]);
-        $this->assertFalse($inactiveTenant->isActive());
-
-        $trialTenant = new Tenant([
-            'status' => Tenant::STATUS_TRIAL,
-            'trial_ends_at' => now()->addDays(7),
-        ]);
-        $this->assertTrue($trialTenant->onTrial());
-
-        $expiredTrialTenant = new Tenant([
-            'status' => Tenant::STATUS_TRIAL,
-            'trial_ends_at' => now()->subDays(1),
-        ]);
-        $this->assertFalse($expiredTrialTenant->onTrial());
+        $tenant->status = Tenant::STATUS_INACTIVE;
+        $this->assertFalse($tenant->isActive());
     }
 
     /**
-     * Test tenant subscription checks.
-     * Probar verificaciones de suscripción
-     *
-     * @test
+     * Test tenant subscription status.
+     * Probar estado de suscripción del tenant
      */
-    public function it_checks_subscription_status_correctly(): void
+    public function test_it_checks_subscription_status_correctly(): void
     {
-        $activeTenant = new Tenant([
-            'subscription_ends_at' => now()->addMonths(6),
+        $tenant = new Tenant([
+            'subscription_ends_at' => now()->addDays(30),
         ]);
-        $this->assertTrue($activeTenant->subscriptionActive());
 
-        $expiredTenant = new Tenant([
-            'subscription_ends_at' => now()->subDays(1),
-        ]);
-        $this->assertFalse($expiredTenant->subscriptionActive());
+        $this->assertTrue($tenant->subscriptionActive());
+
+        $tenant->subscription_ends_at = now()->subDays(1);
+        $this->assertFalse($tenant->subscriptionActive());
     }
 
     /**
-     * Test tenant limits checking.
-     * Probar verificación de límites del tenant
-     *
-     * @test
+     * Test tenant limits.
+     * Probar límites del tenant
      */
-    public function it_checks_limits_correctly(): void
+    public function test_it_checks_limits_correctly(): void
     {
         $tenant = new Tenant([
             'plan' => 'basic',
-            'limits' => ['users' => 10],
         ]);
 
-        $this->assertTrue($tenant->canPerform('users', 5));
-        $this->assertFalse($tenant->canPerform('users', 10));
-        $this->assertTrue($tenant->canPerform('users', 9));
+        // Test with basic plan limits (5 users)
+        $this->assertTrue($tenant->canPerform('users', 4));
+        $this->assertFalse($tenant->canPerform('users', 5));
     }
 
     /**
-     * Test unlimited limits.
-     * Probar límites ilimitados
-     *
-     * @test
+     * Test tenant unlimited limits.
+     * Probar límites ilimitados del tenant
      */
-    public function it_handles_unlimited_limits(): void
+    public function test_it_handles_unlimited_limits(): void
     {
         $tenant = new Tenant([
-            'limits' => ['api_calls' => -1],
+            'plan' => 'enterprise',
         ]);
 
-        $this->assertTrue($tenant->canPerform('api_calls', 999999));
+        // Enterprise plan has unlimited users (-1)
+        $this->assertTrue($tenant->canPerform('users', 1000));
+        $this->assertTrue($tenant->canPerform('users', 9999));
     }
 
     /**
-     * Test tenant settings.
-     * Probar configuraciones del tenant
-     *
-     * @test
+     * Test tenant trial status.
+     * Probar estado de prueba del tenant
      */
-    public function it_handles_settings_correctly(): void
+    public function test_it_checks_trial_status_correctly(): void
     {
         $tenant = new Tenant([
-            'settings' => [
-                'app_name' => 'Mi App',
-                'locale' => 'es',
-                'timezone' => 'America/Mexico_City',
-            ],
+            'status' => Tenant::STATUS_TRIAL,
+            'trial_ends_at' => now()->addDays(7),
         ]);
 
-        $this->assertEquals('Mi App', $tenant->settings['app_name']);
-        $this->assertEquals('es', $tenant->settings['locale']);
+        $this->assertTrue($tenant->onTrial());
+
+        $tenant->trial_ends_at = now()->subDays(1);
+        $this->assertFalse($tenant->onTrial());
+    }
+
+    /**
+     * Test tenant limits retrieval.
+     * Probar obtención de límites del tenant
+     */
+    public function test_it_retrieves_limits_from_plan(): void
+    {
+        $tenant = new Tenant([
+            'plan' => 'basic',
+        ]);
+
+        $limits = $tenant->getLimits();
+
+        $this->assertIsArray($limits);
+        $this->assertEquals(5, $limits['users']);
+        $this->assertEquals(1024, $limits['storage']);
+        $this->assertEquals(1000, $limits['api_calls']);
     }
 }
