@@ -1,14 +1,15 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "laravel/laravel",
+    "name": "kodikas/laravel-multitenant-project",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
-    "keywords": ["laravel", "framework"],
+    "description": "Proyecto Laravel con paquete multitenant avanzado para SaaS empresarial",
+    "keywords": ["laravel", "framework", "multitenant", "saas", "kodikas"],
     "license": "MIT",
     "require": {
         "php": "^8.2",
         "laravel/framework": "^12.0",
-        "laravel/tinker": "^2.10.1"
+        "laravel/tinker": "^2.10.1",
+        "kodikas/laravel-multitenant": "dev-main"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
@@ -23,7 +24,8 @@
         "psr-4": {
             "App\\": "app/",
             "Database\\Factories\\": "database/factories/",
-            "Database\\Seeders\\": "database/seeders/"
+            "Database\\Seeders\\": "database/seeders/",
+            "Kodikas\\Multitenant\\": "packages/kodikas/multitenant/src/"
         }
     },
     "autoload-dev": {
@@ -71,5 +73,11 @@
         }
     },
     "minimum-stability": "stable",
-    "prefer-stable": true
+    "prefer-stable": true,
+    "repositories": [
+        {
+            "type": "path",
+            "url": "./packages/kodikas/multitenant"
+        }
+    ]
 }
