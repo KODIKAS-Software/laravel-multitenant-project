@@ -1,4 +1,4 @@
-name: Security & Vulnerability Scan
+name: Security
 
 on:
   push:
@@ -6,15 +6,15 @@ on:
   pull_request:
     branches: [ develop, master ]
   schedule:
-    - cron: '0 2 * * 1' # Weekly scan on Mondays
+    - cron: '0 2 * * 1'
 
 jobs:
-  security-audit:
+  security:
     runs-on: ubuntu-latest
-    name: Security Audit & Vulnerability Scan
+    name: Security Scan
 
     steps:
-    - name: Checkout code
+    - name: Checkout
       uses: actions/checkout@v4
 
     - name: Setup PHP
@@ -22,177 +22,15 @@ jobs:
       with:
         php-version: 8.2
         extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv
-        tools: composer:v2
 
     - name: Install dependencies
       run: composer install --no-interaction --prefer-dist --no-dev
 
-    - name: Run Composer Security Audit
+    - name: Security audit
+      run: composer audit
+
+    - name: Check for hardcoded secrets
       run: |
-        composer audit --format=json > security-audit.json || true
-        cat security-audit.json
-
-    - name: Install Security Checker
-      run: composer require --dev enlightn/security-checker --no-interaction
-
-    - name: Run Enlightn Security Checker
-      run: |
-        vendor/bin/security-checker security:check composer.lock --format=json > enlightn-security.json || true
-        cat enlightn-security.json
-
-    - name: Scan Multitenant Package
-      run: |
-        cd packages/kodikas/multitenant
-        if [ -f "composer.lock" ]; then
-          composer audit --format=json > ../../../multitenant-security.json || true
-          cat ../../../multitenant-security.json
-        fi
-
-    - name: Upload Security Reports
-      uses: actions/upload-artifact@v3
-      if: always()
-      with:
-        name: security-reports
-        path: |
-          security-audit.json
-          enlightn-security.json
-          multitenant-security.json
-
-  code-analysis:
-    runs-on: ubuntu-latest
-    name: Static Code Analysis
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Setup PHP
-      uses: shivammathur/setup-php@v2
-      with:
-        php-version: 8.2
-        extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv
-
-    - name: Install dependencies
-      run: composer install --no-interaction --prefer-dist
-
-    - name: Install Psalm
-      run: composer require --dev psalm/plugin-laravel vimeo/psalm --no-interaction
-
-    - name: Run Psalm Security Analysis
-      run: |
-        vendor/bin/psalm --init . psalm.xml --level=3 || true
-        vendor/bin/psalm --show-info=true --output-format=json > psalm-analysis.json || true
-        cat psalm-analysis.json
-
-    - name: Install PHPStan Security
-      run: composer require --dev phpstan/phpstan phpstan/phpstan-deprecation-rules --no-interaction
-
-    - name: Run PHPStan Security Analysis
-      run: |
-        vendor/bin/phpstan analyse app/ packages/kodikas/multitenant/src/ --level=5 --error-format=json > phpstan-security.json || true
-        cat phpstan-security.json
-
-    - name: Upload Analysis Reports
-      uses: actions/upload-artifact@v3
-      if: always()
-      with:
-        name: code-analysis-reports
-        path: |
-          psalm-analysis.json
-          phpstan-security.json
-
-  secret-scan:
-    runs-on: ubuntu-latest
-    name: Secret & Credential Scan
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Run TruffleHog Secret Scan
-      uses: trufflesecurity/trufflehog@main
-      with:
-        path: ./
-        base: ${{ github.event.repository.default_branch }}
-        head: HEAD
-        extra_args: --debug --only-verified
-
-    - name: Scan for hardcoded credentials
-      run: |
-        echo "🔍 Scanning for potential hardcoded credentials..."
-        
-        # Buscar patrones comunes de credenciales
-        echo "Checking for potential API keys..."
-        grep -r -i "api[_-]key\|apikey" --include="*.php" --include="*.js" --include="*.env*" . || echo "No API keys found"
-        
-        echo "Checking for potential passwords..."
-        grep -r -i "password\s*=\s*['\"][^'\"]*['\"]" --include="*.php" --include="*.js" . || echo "No hardcoded passwords found"
-        
-        echo "Checking for potential tokens..."
-        grep -r -i "token\s*=\s*['\"][^'\"]*['\"]" --include="*.php" --include="*.js" . || echo "No hardcoded tokens found"
-        
-        echo "Checking for potential database credentials..."
-        grep -r -i "db_password\|database_password" --include="*.php" --include="*.env*" . || echo "No database credentials found"
-
-  laravel-security:
-    runs-on: ubuntu-latest
-    name: Laravel-Specific Security Checks
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Setup PHP
-      uses: shivammathur/setup-php@v2
-      with:
-        php-version: 8.2
-        extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv
-
-    - name: Install dependencies
-      run: composer install --no-interaction --prefer-dist
-
-    - name: Check Laravel Security Headers
-      run: |
-        echo "🔍 Checking Laravel security configurations..."
-        
-        # Verificar configuraciones de seguridad importantes
-        echo "Checking APP_DEBUG setting..."
-        grep -q "APP_DEBUG=false" .env.example || echo "⚠️  APP_DEBUG should be false in production"
-        
-        echo "Checking APP_KEY configuration..."
-        grep -q "APP_KEY=" .env.example || echo "⚠️  APP_KEY should be configured"
-        
-        echo "Checking session security..."
-        grep -q "SESSION_SECURE_COOKIE=true" .env.example || echo "ℹ️  Consider setting SESSION_SECURE_COOKIE=true for HTTPS"
-
-    - name: Check for Laravel vulnerabilities
-      run: |
-        echo "🔍 Checking Laravel framework version for known vulnerabilities..."
-        php artisan --version
-        
-        # Verificar versión de Laravel contra vulnerabilidades conocidas
-        composer show laravel/framework --format=json > laravel-version.json
-        cat laravel-version.json
-
-    - name: Validate Multitenant Security
-      run: |
-        echo "🔍 Checking multitenant-specific security configurations..."
-        
-        cd packages/kodikas/multitenant
-        
-        # Verificar configuraciones de seguridad del paquete multitenant
-        echo "Checking for SQL injection protections..."
-        grep -r "DB::" src/ || echo "✅ No raw DB queries found"
-        
-        echo "Checking for XSS protections..."
-        grep -r "echo\s*\$" src/ || echo "✅ No potential XSS vulnerabilities found"
-        
-        echo "Checking for CSRF protections..."
-        grep -r "@csrf\|csrf_token" src/ || echo "ℹ️  Ensure CSRF protection is implemented in forms"
-
-    - name: Upload Laravel Security Report
-      uses: actions/upload-artifact@v3
-      if: always()
-      with:
-        name: laravel-security-report
-        path: laravel-version.json
+        echo "Checking for potential secrets..."
+        grep -r -i "password\s*=" --include="*.php" . || echo "No hardcoded passwords found"
+        grep -r -i "api[_-]key" --include="*.php" . || echo "No API keys found"

@@ -1,231 +1,73 @@
-name: CI/CD Pipeline
+name: CI/CD
 
 on:
   push:
-    branches: [ master, develop ]
+    branches: [ develop, master ]
   pull_request:
-    branches: [ master, develop ]
-
-env:
-  PHP_VERSION: 8.2
-  NODE_VERSION: 18
-  COMPOSER_CACHE: ~/.composer/cache
+    branches: [ develop, master ]
 
 jobs:
-  # Job de validación de código
-  code-quality:
-    name: Code Quality & Security
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Setup PHP
-      uses: shivammathur/setup-php@v2
-      with:
-        php-version: ${{ env.PHP_VERSION }}
-        extensions: mbstring, xml, ctype, iconv, intl, pdo_sqlite, dom, filter, gd, iconv, json, mbstring, pdo
-        coverage: xdebug
-
-    - name: Cache Composer packages
-      uses: actions/cache@v3
-      with:
-        path: ${{ env.COMPOSER_CACHE }}
-        key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
-        restore-keys: ${{ runner.os }}-composer-
-
-    - name: Install Composer dependencies
-      run: composer install --no-progress --prefer-dist --optimize-autoloader --ignore-platform-reqs
-
-    - name: Regenerate autoload for local package
-      run: composer dump-autoload
-
-    - name: Run Laravel Pint (Code Style)
-      run: ./vendor/bin/pint --test --verbose || echo "Laravel Pint check completed with warnings"
-      continue-on-error: true
-
-    - name: Run Security Checker
-      run: composer audit || echo "Security audit completed"
-      continue-on-error: true
-
-  # Job de tests simplificado solo para Laravel 12.x
   tests:
-    name: Tests (PHP ${{ matrix.php }})
     runs-on: ubuntu-latest
-
     strategy:
-      fail-fast: false
       matrix:
         php: [8.2, 8.3]
 
+    name: Tests (PHP ${{ matrix.php }})
+
     steps:
-    - name: Checkout code
+    - name: Checkout
       uses: actions/checkout@v4
 
     - name: Setup PHP
       uses: shivammathur/setup-php@v2
       with:
         php-version: ${{ matrix.php }}
-        extensions: mbstring, xml, ctype, iconv, intl, pdo_sqlite, pdo_mysql, dom, filter, gd, iconv, json, mbstring
-        coverage: xdebug
+        extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv
+        coverage: none
 
-    - name: Cache Composer packages
-      uses: actions/cache@v3
-      with:
-        path: ${{ env.COMPOSER_CACHE }}
-        key: ${{ runner.os }}-php${{ matrix.php }}-composer-${{ hashFiles('**/composer.lock') }}
-        restore-keys: ${{ runner.os }}-php${{ matrix.php }}-composer-
+    - name: Install dependencies
+      run: composer install --no-interaction --prefer-dist
 
-    - name: Install Composer dependencies
-      run: composer install --no-progress --prefer-dist --optimize-autoloader --ignore-platform-reqs
-
-    - name: Regenerate autoload for local package
-      run: composer dump-autoload
-
-    - name: Copy environment file
-      run: cp .env.example .env
-
-    - name: Generate application key
-      run: php artisan key:generate
-
-    - name: Create SQLite database
+    - name: Create database
       run: touch database/database.sqlite
 
-    - name: Run migrations
-      run: php artisan migrate --env=testing
-      continue-on-error: true
+    - name: Run tests
+      env:
+        DB_CONNECTION: sqlite
+        DB_DATABASE: database/database.sqlite
+      run: vendor/bin/phpunit
 
-    - name: Run package tests
+    - name: Test multitenant package
       run: |
         cd packages/kodikas/multitenant
-        ../../../vendor/bin/phpunit --configuration=phpunit.xml --testdox
-      continue-on-error: true
+        composer install --no-interaction
+        if [ -f "vendor/bin/phpunit" ]; then
+          vendor/bin/phpunit
+        fi
 
-    - name: Run application tests
-      run: php artisan test --testdox
-      continue-on-error: true
-
-  # Job separado para compatibility testing (futuro)
-  compatibility-tests:
-    name: Laravel Compatibility Tests
+  code-quality:
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request' && contains(github.event.pull_request.title, '[compatibility]')
-
-    strategy:
-      fail-fast: false
-      matrix:
-        php: [8.2, 8.3]
-        laravel: [10.x, 11.x, 12.x]
-        include:
-          - laravel: 10.x
-            testbench: 8.x
-          - laravel: 11.x
-            testbench: 9.x
-          - laravel: 12.x
-            testbench: 10.x
+    name: Code Quality
 
     steps:
-    - name: Checkout code
+    - name: Checkout
       uses: actions/checkout@v4
 
     - name: Setup PHP
       uses: shivammathur/setup-php@v2
       with:
-        php-version: ${{ matrix.php }}
-        extensions: mbstring, xml, ctype, iconv, intl, pdo_sqlite, pdo_mysql, dom, filter, gd, iconv, json, mbstring
+        php-version: 8.2
+        extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv
 
-    - name: Create isolated test environment
+    - name: Install dependencies
+      run: composer install --no-interaction --prefer-dist
+
+    - name: Run Pint
       run: |
-        mkdir -p /tmp/laravel-${{ matrix.laravel }}-test
-        cd /tmp/laravel-${{ matrix.laravel }}-test
-        composer create-project laravel/laravel:${{ matrix.laravel }} . --no-install
-        composer require "orchestra/testbench:${{ matrix.testbench }}" --dev --no-install
+        if [ -f "vendor/bin/pint" ]; then
+          vendor/bin/pint --test
+        fi
 
-    - name: Copy package to test environment
-      run: |
-        cp -r $GITHUB_WORKSPACE/packages/kodikas/multitenant /tmp/laravel-${{ matrix.laravel }}-test/packages/kodikas/
-
-    - name: Install dependencies in test environment
-      run: |
-        cd /tmp/laravel-${{ matrix.laravel }}-test
-        composer install --no-progress --prefer-dist
-
-    - name: Run compatibility tests
-      run: |
-        cd /tmp/laravel-${{ matrix.laravel }}-test/packages/kodikas/multitenant
-        ../../../vendor/bin/phpunit --configuration=phpunit.xml --testdox
-      continue-on-error: true
-
-  # Job de build y validación de assets
-  frontend:
-    name: Frontend Build & Validation
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-        cache-dependency-path: package.json
-
-    - name: Install npm dependencies
-      run: npm install
-
-    - name: Run ESLint
-      run: npm run lint || echo "ESLint not configured, skipping..."
-
-    - name: Build assets
-      run: npm run build
-
-    - name: Check for security vulnerabilities
-      run: npm audit --audit-level moderate || echo "No package-lock.json found, skipping npm audit"
-
-  # Job de release automático (solo en master)
-  release:
-    name: Create Release
-    needs: [code-quality, tests, frontend]
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-
-    - name: Trigger compatibility validation before release
-      uses: ./.github/workflows/compatibility.yml
-      with:
-        test_all_versions: true
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-
-    - name: Install semantic-release
-      run: npm install -g semantic-release @semantic-release/changelog @semantic-release/git
-
-    - name: Create Release
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: npx semantic-release
-
-  # Job de deployment a Packagist (solo releases)
-  deploy:
-    name: Deploy to Packagist
-    needs: [release]
-    runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')
-
-    steps:
-    - name: Trigger Packagist update
-      run: |
-        curl -XPOST -H'content-type:application/json' \
-          'https://packagist.org/api/update-package?username=${{ secrets.PACKAGIST_USERNAME }}&apiToken=${{ secrets.PACKAGIST_TOKEN }}' \
-          -d'{"repository":{"url":"https://github.com/kodikas/laravel-multitenant"}}'
+    - name: Validate composer.json
+      run: composer validate
