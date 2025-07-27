@@ -73,10 +73,9 @@ class Tenant extends Model
             return $this->database_name;
         }
 
-        $prefix = config('multitenant.tenant_database.prefix', 'tenant_');
-        $suffix = config('multitenant.tenant_database.suffix', '');
+        $prefix = config('multitenant.database.prefix', 'tenant_');
 
-        return $prefix.$this->slug.$suffix;
+        return $prefix . $this->slug;
     }
 
     /**
@@ -132,7 +131,7 @@ class Tenant extends Model
      */
     public function getLimits(): array
     {
-        $planLimits = config("multitenant.billing.plans.{$this->plan}.features", []);
+        $planLimits = config("multitenant.billing.plans.{$this->plan}.limits", []);
 
         return array_merge($planLimits, $this->limits ?? []);
     }
@@ -143,9 +142,9 @@ class Tenant extends Model
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(
-            config('multitenant.user_model'),
+            \App\Models\User::class,
             'tenant_users'
-        )->withPivot(['role', 'status', 'invited_at', 'joined_at'])
+        )->withPivot(['user_type', 'role', 'status', 'permissions', 'access_restrictions', 'invited_at', 'joined_at'])
             ->withTimestamps();
     }
 
