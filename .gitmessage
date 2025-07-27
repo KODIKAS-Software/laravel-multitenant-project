@@ -1,0 +1,40 @@
+# Conventional Commit Message Template
+# Usar el formato: type(scope): description
+#
+# Tipos válidos / Valid types:
+# feat:     Nueva característica / New feature
+# fix:      Corrección de bug / Bug fix
+# docs:     Documentación / Documentation
+# style:    Cambios de formato / Formatting changes
+# refactor: Refactorización / Refactoring
+# test:     Tests / Testing
+# chore:    Tareas de mantenimiento / Maintenance tasks
+# perf:     Mejoras de rendimiento / Performance improvements
+# ci:       Integración continua / Continuous integration
+# build:    Sistema de build / Build system
+# revert:   Revertir cambios / Revert changes
+#
+# Ejemplos / Examples:
+# feat(auth): add JWT authentication system
+# fix(tenant): resolve database connection issue
+# docs(readme): update installation instructions
+# style(lint): fix code formatting issues
+# refactor(user): simplify user type validation
+# test(tenant): add unit tests for tenant creation
+# chore(deps): update Laravel to v12
+#
+# Formato completo / Full format:
+# type(scope): short description (max 50 chars)
+#
+# Longer description explaining what and why (wrap at 72 chars)
+#
+# Fixes #123
+# Closes #456
+# Co-authored-by: Name <email@example.com>
+
+# 50-character subject line
+# |<----  Using a Maximum Of 50 Characters  ---->|
+
+
+# 72-character wrapped longer description
+# |<----   Try To Limit Each Line to a Maximum Of 72 Characters   ---->|
