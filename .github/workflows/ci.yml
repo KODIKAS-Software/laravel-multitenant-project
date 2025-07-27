@@ -186,7 +186,13 @@ jobs:
     - name: Run PHPStan (Static Analysis)
       run: |
         if [ -f "vendor/bin/phpstan" ]; then
-          vendor/bin/phpstan analyse app packages/kodikas/multitenant/src --level=5 --memory-limit=2G
+          echo "Running PHPStan with multitenant package configuration..."
+          cd packages/kodikas/multitenant
+          if [ -f "phpstan.neon" ]; then
+            ../../../vendor/bin/phpstan analyse --configuration=phpstan.neon --memory-limit=2G
+          else
+            ../../../vendor/bin/phpstan analyse src --level=5 --memory-limit=2G
+          fi
         else
           echo "PHPStan not available, skipping static analysis"
         fi

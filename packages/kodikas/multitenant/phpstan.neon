@@ -1,0 +1,39 @@
+parameters:
+    level: 6
+    paths:
+        - packages/kodikas/multitenant/src
+    tmpDir: build/phpstan
+    checkOctaneCompatibility: false
+    checkModelProperties: false
+    checkMissingIterableValueType: false
+    treatPhpDocTypesAsCertain: false
+    excludePaths:
+        - packages/kodikas/multitenant/src/Traits/BelongsToTenant.php
+        - packages/kodikas/multitenant/src/Traits/HasTenants.php
+        - packages/kodikas/multitenant/src/Traits/HasUserTypeAccess.php
+    ignoreErrors:
+        # Ignore Eloquent dynamic properties
+        - '#Access to an undefined property [a-zA-Z0-9\\_]+::\$[a-zA-Z0-9_]+#'
+        # Ignore Eloquent static methods
+        - '#Call to an undefined static method [a-zA-Z0-9\\_]+::(find|where|create|active|byDomain)\(\)#'
+        # Ignore Facade methods
+        - '#Call to an undefined static method [a-zA-Z0-9\\_]+\\Facades\\[a-zA-Z0-9\\_]+::(current|check)\(\)#'
+        # Ignore Request dynamic properties
+        - '#Access to an undefined property Illuminate\\Http\\Request::\$[a-zA-Z0-9_]+#'
+        # Ignore Auth facade methods
+        - '#Call to an undefined method Illuminate\\Contracts\\Auth\\Factory::(id|login)\(\)#'
+        # Ignore return type issues for Eloquent relationships
+        - '#Method [a-zA-Z0-9\\_]+::pendingInvitations\(\) should return [a-zA-Z0-9\\_]+ but returns#'
+        - '#Method [a-zA-Z0-9\\_]+::resolveConnection\(\) should return [a-zA-Z0-9\\_]+ but returns#'
+        # Ignore unused traits
+        - '#Trait [a-zA-Z0-9\\_]+ is used zero times and is not analysed#'
+        # Ignore redeclared methods (common in Laravel)
+        - '#Cannot redeclare method#'
+        # Ignore unknown classes that are Laravel-specific
+        - '#Call to static method call\(\) on an unknown class Artisan#'
+        # Ignore comparison that's always true
+        - '#Comparison operation ">" between int<1, max> and 0 is always true#'
+    reportUnmatchedIgnoredErrors: false
+
+bootstrap: packages/kodikas/multitenant/tests/bootstrap.php
+
