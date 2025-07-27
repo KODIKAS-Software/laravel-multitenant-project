@@ -1,4 +1,4 @@
-EGRAR<?php
+<?php
 
 namespace Kodikas\Multitenant\Http\Controllers;
 
