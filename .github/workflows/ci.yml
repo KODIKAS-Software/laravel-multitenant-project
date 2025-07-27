@@ -117,7 +117,7 @@ jobs:
           
           echo "Running multitenant package tests..."
           if [ -f "vendor/bin/phpunit" ]; then
-            vendor/bin/phpunit --verbose
+            vendor/bin/phpunit --display-warnings --display-errors
           else
             echo "PHPUnit not found for multitenant package"
           fi
