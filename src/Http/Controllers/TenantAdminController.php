@@ -1,4 +1,4 @@
-O<?php
+<?php
 
 namespace Kodikas\Multitenant\Http\Controllers;
 
