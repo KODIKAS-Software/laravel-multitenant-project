@@ -2,9 +2,9 @@ name: Performance Tests
 
 on:
   push:
-    branches: [ develop, master, main ]
+    branches: [ develop, master ]
   pull_request:
-    branches: [ develop, master, main ]
+    branches: [ develop, master ]
   schedule:
     - cron: '0 4 * * 1' # Weekly performance check on Mondays
   workflow_dispatch:
