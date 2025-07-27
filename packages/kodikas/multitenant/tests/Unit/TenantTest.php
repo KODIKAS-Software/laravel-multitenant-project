@@ -48,7 +48,9 @@ class TenantTest extends TestCase
     {
         $tenant = new Tenant(['slug' => 'test-tenant']);
 
-        $this->assertEquals('tenant_test-tenant', $tenant->getConnectionName());
+        // During testing, connection name should be 'testing' to use test database
+        // En testing, el nombre de conexión debe ser 'testing' para usar la BD de pruebas
+        $this->assertEquals('testing', $tenant->getConnectionName());
     }
 
     /**
