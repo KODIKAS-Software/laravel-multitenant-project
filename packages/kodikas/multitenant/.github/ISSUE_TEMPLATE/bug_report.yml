@@ -1,0 +1,147 @@
+name: Bug Report / Reporte de Bug
+description: Report a bug to help us improve / Reporta un bug para ayudarnos a mejorar
+title: "[BUG] "
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Gracias por reportar este bug. Por favor, completa la información solicitada para ayudarnos a resolverlo rápidamente.
+        
+        *Thank you for reporting this bug. Please fill in the requested information to help us resolve it quickly.*
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Confirmaciones / Confirmations
+      description: Por favor confirma lo siguiente / Please confirm the following
+      options:
+        - label: He buscado en issues existentes y no encontré uno similar / I have searched existing issues and didn't find a similar one
+          required: true
+        - label: He leído la documentación / I have read the documentation
+          required: true
+        - label: Este es un bug reproducible / This is a reproducible bug
+          required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Descripción del Bug / Bug Description
+      description: Describe claramente qué está pasando / Clearly describe what is happening
+      placeholder: El bug ocurre cuando... / The bug occurs when...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Comportamiento Esperado / Expected Behavior
+      description: Describe qué esperabas que pasara / Describe what you expected to happen
+      placeholder: Esperaba que... / I expected that...
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Comportamiento Actual / Actual Behavior
+      description: Describe qué está pasando realmente / Describe what is actually happening
+      placeholder: En su lugar, está pasando... / Instead, what happens is...
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Pasos para Reproducir / Steps to Reproduce
+      description: Lista los pasos para reproducir el bug / List the steps to reproduce the bug
+      placeholder: |
+        1. Ir a...
+        2. Hacer clic en...
+        3. Ver error...
+        
+        1. Go to...
+        2. Click on...
+        3. See error...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: tenant-strategy
+    attributes:
+      label: Estrategia de Tenant / Tenant Strategy
+      description: ¿Qué estrategia de base de datos estás usando? / What database strategy are you using?
+      options:
+        - single_database
+        - multiple_databases
+        - multiple_schemas
+        - No aplicable / Not applicable
+    validations:
+      required: true
+
+  - type: dropdown
+    id: user-type
+    attributes:
+      label: Tipo de Usuario / User Type
+      description: ¿Con qué tipo de usuario ocurre el bug? / What user type does the bug occur with?
+      options:
+        - owner
+        - admin
+        - employee
+        - client
+        - vendor
+        - partner
+        - consultant
+        - guest
+        - No aplicable / Not applicable
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Información del Entorno / Environment Information
+      description: Información sobre tu entorno de desarrollo / Information about your development environment
+      placeholder: |
+        - PHP Version: 8.2.x
+        - Laravel Version: 12.x
+        - Package Version: 1.x.x
+        - OS: Windows/Linux/macOS
+        - Database: MySQL/PostgreSQL/SQLite
+        - Web Server: Apache/Nginx
+      render: markdown
+    validations:
+      required: true
+
+  - type: textarea
+    id: error-logs
+    attributes:
+      label: Logs de Error / Error Logs
+      description: Incluye cualquier log de error relevante / Include any relevant error logs
+      placeholder: |
+        [2025-01-27 10:30:00] local.ERROR: ...
+      render: shell
+
+  - type: textarea
+    id: code-sample
+    attributes:
+      label: Ejemplo de Código / Code Sample
+      description: Si es relevante, incluye un ejemplo de código / If relevant, include a code sample
+      render: php
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Información Adicional / Additional Information
+      description: Cualquier otra información que pueda ser útil / Any other information that might be helpful
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Prioridad / Priority
+      description: ¿Qué tan crítico es este bug? / How critical is this bug?
+      options:
+        - "Low / Bajo - Feature request or minor issue"
+        - "Medium / Medio - Affects functionality but has workaround"
+        - "High / Alto - Breaks important functionality"
+        - "Critical / Crítico - Breaks core functionality or security issue"
+    validations:
+      required: true
