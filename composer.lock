@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "0736fd651f61d81c1a8b8afd749f5503",
+    "content-hash": "1c9a8181a3d54650667284537c80325f",
     "packages": [
         {
             "name": "brick/math",
@@ -1309,7 +1309,7 @@
         },
         {
             "name": "kodikas/multitenant",
-            "version": "dev-develop",
+            "version": "dev-master",
             "dist": {
                 "type": "path",
                 "url": "./packages/kodikas/multitenant",
