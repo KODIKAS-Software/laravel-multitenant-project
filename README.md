@@ -9,9 +9,10 @@
 
 # 🏢 Kodikas Laravel Multitenant Project
 
-[![Laravel Compatibility](https://github.com/KODIKAS-Software/laravel-multitenant-project/workflows/Laravel%20Compatibility%20Matrix/badge.svg)](https://github.com/KODIKAS-Software/laravel-multitenant-project/actions)
-[![Security Scan](https://github.com/KODIKAS-Software/laravel-multitenant-project/workflows/Security%20&%20Vulnerability%20Scan/badge.svg)](https://github.com/KODIKAS-Software/laravel-multitenant-project/actions)
-[![Code Quality](https://github.com/KODIKAS-Software/laravel-multitenant-project/workflows/Code%20Quality%20&%20Validation/badge.svg)](https://github.com/KODIKAS-Software/laravel-multitenant-project/actions)
+[![CI/CD Pipeline](https://github.com/KODIKAS-Software/laravel-multitenant-project/workflows/CI%2FCD%20Pipeline/badge.svg)](https://github.com/KODIKAS-Software/laravel-multitenant-project/actions)
+[![Tests](https://github.com/KODIKAS-Software/laravel-multitenant-project/workflows/CI%2FCD%20Pipeline/badge.svg?event=push)](https://github.com/KODIKAS-Software/laravel-multitenant-project/actions)
+[![Code Quality](https://github.com/KODIKAS-Software/laravel-multitenant-project/workflows/CI%2FCD%20Pipeline/badge.svg?job=code-quality)](https://github.com/KODIKAS-Software/laravel-multitenant-project/actions)
+[![Auto Release](https://github.com/KODIKAS-Software/laravel-multitenant-project/workflows/CI%2FCD%20Pipeline/badge.svg?job=auto-release)](https://github.com/KODIKAS-Software/laravel-multitenant-project/actions)
 
 Proyecto Laravel con paquete multitenant avanzado para SaaS empresarial. Diseñado exclusivamente para **Laravel 12.x** con enfoque latinoamericano/empresarial.
 
