@@ -11,7 +11,9 @@ class SubscriptionUpdated
     use Dispatchable, SerializesModels;
 
     public $tenant;
+
     public $oldPlan;
+
     public $newPlan;
 
     public function __construct(Tenant $tenant, $oldPlan, $newPlan)

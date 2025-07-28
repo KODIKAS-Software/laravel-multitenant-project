@@ -1,4 +1,4 @@
-EGRAR<?php
+<?php
 
 namespace Kodikas\Multitenant\Http\Controllers;
 
@@ -17,8 +17,9 @@ class TenantInvitationController extends Controller
         $invitation = TenantInvitation::where('token', $token)->firstOrFail();
 
         // Verificar si la invitación es válida
-        if (!$invitation->isPending()) {
+        if (! $invitation->isPending()) {
             $status = $invitation->isExpired() ? 'expirada' : 'ya utilizada';
+
             return view('multitenant::invitations.invalid', compact('invitation', 'status'));
         }
 
@@ -33,7 +34,7 @@ class TenantInvitationController extends Controller
         $invitation = TenantInvitation::where('token', $token)->firstOrFail();
 
         // Verificar si la invitación es válida
-        if (!$invitation->isPending()) {
+        if (! $invitation->isPending()) {
             return redirect()->route('login')->with('error', 'La invitación no es válida o ha expirado.');
         }
 
@@ -47,7 +48,7 @@ class TenantInvitationController extends Controller
         // Verificar si el usuario ya existe
         $user = $userModel::where('email', $invitation->email)->first();
 
-        if (!$user) {
+        if (! $user) {
             // Crear nuevo usuario
             $user = $userModel::create([
                 'name' => $request->name,
@@ -64,6 +65,7 @@ class TenantInvitationController extends Controller
 
         if ($existingTenantUser) {
             $invitation->update(['status' => TenantInvitation::STATUS_CANCELLED]);
+
             return redirect()->route('login')->with('error', 'Ya eres miembro de este tenant.');
         }
 
@@ -92,7 +94,7 @@ class TenantInvitationController extends Controller
         // Iniciar sesión del usuario
         auth()->login($user);
 
-        return redirect()->route('tenant.dashboard')->with('success', 'Bienvenido al tenant ' . $invitation->tenant->name);
+        return redirect()->route('tenant.dashboard')->with('success', 'Bienvenido al tenant '.$invitation->tenant->name);
     }
 
     /**
@@ -100,7 +102,7 @@ class TenantInvitationController extends Controller
      */
     protected function getUserTypeFromRole(string $role): string
     {
-        return match($role) {
+        return match ($role) {
             TenantUser::ROLE_SUPER_ADMIN, TenantUser::ROLE_ADMIN => TenantUser::TYPE_ADMIN,
             TenantUser::ROLE_MANAGER => TenantUser::TYPE_EMPLOYEE,
             TenantUser::ROLE_EMPLOYEE => TenantUser::TYPE_EMPLOYEE,
@@ -115,7 +117,7 @@ class TenantInvitationController extends Controller
      */
     protected function getPermissionsFromRole(string $role): array
     {
-        return match($role) {
+        return match ($role) {
             TenantUser::ROLE_SUPER_ADMIN => [
                 'view_all_data',
                 'manage_users',

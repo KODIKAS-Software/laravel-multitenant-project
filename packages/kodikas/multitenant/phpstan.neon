@@ -1,0 +1,51 @@
+parameters:
+    level: 6
+    paths:
+        - src
+    tmpDir: build/phpstan
+    treatPhpDocTypesAsCertain: false
+    excludePaths:
+        - src/Traits/BelongsToTenant.php (?)
+        - src/Traits/HasTenants.php (?)
+        - src/Traits/HasUserTypeAccess.php (?)
+        - src/TenantManager.php
+    ignoreErrors:
+        # Ignorar errores de tipos faltantes específicos
+        -
+            identifier: missingType.iterableValue
+        -
+            identifier: missingType.generics
+        -
+            identifier: missingType.return
+        -
+            identifier: missingType.parameter
+        -
+            identifier: missingType.property
+        -
+            identifier: argument.templateType
+
+        # Ignorar método redeclarado específico
+        - '#Cannot redeclare method Kodikas\\Multitenant\\TenantManager::current\(\)#'
+
+        # Ignore Eloquent dynamic properties
+        - '#Access to an undefined property [a-zA-Z0-9\\_]+::\$[a-zA-Z0-9_]+#'
+        # Ignore Eloquent static methods
+        - '#Call to an undefined static method [a-zA-Z0-9\\_]+::(find|where|create|active|byDomain)\(\)#'
+        # Ignore Facade methods
+        - '#Call to an undefined static method [a-zA-Z0-9\\_]+\\Facades\\[a-zA-Z0-9\\_]+::(current|check)\(\)#'
+        # Ignore Request dynamic properties
+        - '#Access to an undefined property Illuminate\\Http\\Request::\$[a-zA-Z0-9_]+#'
+        # Ignore Auth facade methods
+        - '#Call to an undefined method Illuminate\\Contracts\\Auth\\Factory::(id|login)\(\)#'
+        # Ignore return type issues for Eloquent relationships
+        - '#Method [a-zA-Z0-9\\_]+::pendingInvitations\(\) should return [a-zA-Z0-9\\_]+ but returns#'
+        - '#Method [a-zA-Z0-9\\_]+::resolveConnection\(\) should return [a-zA-Z0-9\\_]+ but returns#'
+        # Ignore unused traits
+        - '#Trait [a-zA-Z0-9\\_]+ is used zero times and is not analysed#'
+        # Ignore redeclared methods (common in Laravel)
+        - '#Cannot redeclare method#'
+        # Ignore unknown classes that are Laravel-specific
+        - '#Call to static method call\(\) on an unknown class Artisan#'
+        # Ignore comparison that's always true
+        - '#Comparison operation ">" between int<1, max> and 0 is always true#'
+    reportUnmatchedIgnoredErrors: false

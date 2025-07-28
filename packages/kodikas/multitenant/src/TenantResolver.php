@@ -4,12 +4,13 @@ namespace Kodikas\Multitenant;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
-use Kodikas\Multitenant\Models\Tenant;
 use Kodikas\Multitenant\Contracts\TenantResolverContract;
+use Kodikas\Multitenant\Models\Tenant;
 
 class TenantResolver implements TenantResolverContract
 {
     protected $app;
+
     protected $request;
 
     public function __construct($app)
@@ -108,7 +109,7 @@ class TenantResolver implements TenantResolverContract
         $path = $this->request->path();
         $segments = explode('/', $path);
 
-        if (count($segments) > 0 && !empty($segments[0])) {
+        if (count($segments) > 0 && ! empty($segments[0])) {
             $tenantSlug = $segments[0];
 
             return $this->findTenantByIdentifier($tenantSlug);
@@ -124,7 +125,7 @@ class TenantResolver implements TenantResolverContract
     {
         $tenantId = $this->request->header('X-Tenant-ID');
 
-        if (!$tenantId) {
+        if (! $tenantId) {
             return null;
         }
 
@@ -136,13 +137,13 @@ class TenantResolver implements TenantResolverContract
      */
     protected function resolveFromSession(): ?Tenant
     {
-        if (!$this->request->hasSession()) {
+        if (! $this->request->hasSession()) {
             return null;
         }
 
         $tenantId = $this->request->session()->get('tenant_id');
 
-        if (!$tenantId) {
+        if (! $tenantId) {
             return null;
         }
 
@@ -154,7 +155,7 @@ class TenantResolver implements TenantResolverContract
      */
     protected function findTenantByIdentifier(string $identifier): ?Tenant
     {
-        $cacheKey = config('multitenant.cache.prefix') . "identifier:{$identifier}";
+        $cacheKey = config('multitenant.cache.prefix')."identifier:{$identifier}";
 
         if (config('multitenant.cache.enabled')) {
             return Cache::remember($cacheKey, config('multitenant.cache.ttl'), function () use ($identifier) {
@@ -172,11 +173,11 @@ class TenantResolver implements TenantResolverContract
     {
         return Tenant::where(function ($query) use ($identifier) {
             $query->where('slug', $identifier)
-                  ->orWhere('domain', $identifier)
-                  ->orWhere('subdomain', $identifier);
+                ->orWhere('domain', $identifier)
+                ->orWhere('subdomain', $identifier);
         })
-        ->where('status', Tenant::STATUS_ACTIVE)
-        ->first();
+            ->where('status', Tenant::STATUS_ACTIVE)
+            ->first();
     }
 
     /**

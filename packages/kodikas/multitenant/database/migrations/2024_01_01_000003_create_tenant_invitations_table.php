@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('tenant_id')->constrained()->onDelete('cascade');
             $table->string('email');
             $table->enum('role', [
-                'super_admin', 'admin', 'manager', 'employee', 'client', 'viewer'
+                'super_admin', 'admin', 'manager', 'employee', 'client', 'viewer',
             ])->default('employee');
             $table->string('token', 40)->unique();
             $table->enum('status', ['pending', 'accepted', 'expired', 'cancelled'])->default('pending');

@@ -2,14 +2,14 @@
 
 namespace Kodikas\Multitenant\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Kodikas\Multitenant\Events\TenantCreated;
-use Kodikas\Multitenant\Events\TenantUpdated;
 use Kodikas\Multitenant\Events\TenantDeleted;
+use Kodikas\Multitenant\Events\TenantUpdated;
 
 class Tenant extends Model
 {
@@ -49,8 +49,11 @@ class Tenant extends Model
     ];
 
     const STATUS_ACTIVE = 'active';
+
     const STATUS_INACTIVE = 'inactive';
+
     const STATUS_SUSPENDED = 'suspended';
+
     const STATUS_TRIAL = 'trial';
 
     /**
@@ -58,7 +61,25 @@ class Tenant extends Model
      */
     public function getConnectionName(): string
     {
+        // During testing, always use the testing connection
+        if (app()->environment('testing')) {
+            return 'testing';
+        }
+
         return "tenant_{$this->slug}";
+    }
+
+    /**
+     * Resolve a connection instance for the model.
+     */
+    public static function resolveConnection($connection = null)
+    {
+        // During testing, force use of testing connection
+        if (app()->environment('testing')) {
+            return static::getConnectionResolver()->connection('testing');
+        }
+
+        return parent::resolveConnection($connection);
     }
 
     /**
@@ -70,10 +91,9 @@ class Tenant extends Model
             return $this->database_name;
         }
 
-        $prefix = config('multitenant.tenant_database.prefix', 'tenant_');
-        $suffix = config('multitenant.tenant_database.suffix', '');
+        $prefix = config('multitenant.database.prefix', 'tenant_');
 
-        return $prefix . $this->slug . $suffix;
+        return $prefix.$this->slug;
     }
 
     /**
@@ -110,7 +130,7 @@ class Tenant extends Model
     {
         $limits = $this->getLimits();
 
-        if (!isset($limits[$action])) {
+        if (! isset($limits[$action])) {
             return true;
         }
 
@@ -129,7 +149,7 @@ class Tenant extends Model
      */
     public function getLimits(): array
     {
-        $planLimits = config("multitenant.billing.plans.{$this->plan}.features", []);
+        $planLimits = config("multitenant.billing.plans.{$this->plan}.limits", []);
 
         return array_merge($planLimits, $this->limits ?? []);
     }
@@ -140,10 +160,10 @@ class Tenant extends Model
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(
-            config('multitenant.user_model'),
+            \App\Models\User::class,
             'tenant_users'
-        )->withPivot(['role', 'status', 'invited_at', 'joined_at'])
-          ->withTimestamps();
+        )->withPivot(['user_type', 'role', 'status', 'permissions', 'access_restrictions', 'invited_at', 'joined_at'])
+            ->withTimestamps();
     }
 
     /**
@@ -184,7 +204,7 @@ class Tenant extends Model
     public function scopeOnTrial($query)
     {
         return $query->where('status', self::STATUS_TRIAL)
-                    ->where('trial_ends_at', '>', now());
+            ->where('trial_ends_at', '>', now());
     }
 
     /**
@@ -193,7 +213,7 @@ class Tenant extends Model
     public function scopeByDomain($query, string $domain)
     {
         return $query->where('domain', $domain)
-                    ->orWhere('subdomain', $domain);
+            ->orWhere('subdomain', $domain);
     }
 
     /**

@@ -17,13 +17,13 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->enum('user_type', [
                 'owner', 'admin', 'employee', 'client',
-                'vendor', 'partner', 'consultant', 'guest'
+                'vendor', 'partner', 'consultant', 'guest',
             ])->default('employee');
             $table->enum('role', [
-                'super_admin', 'admin', 'manager', 'employee', 'client', 'viewer'
+                'super_admin', 'admin', 'manager', 'employee', 'client', 'viewer',
             ])->default('employee');
             $table->enum('status', [
-                'active', 'inactive', 'suspended', 'pending', 'blocked'
+                'active', 'inactive', 'suspended', 'pending', 'blocked',
             ])->default('active');
             $table->json('permissions')->nullable();
             $table->foreignId('invited_by')->nullable()->constrained('users');

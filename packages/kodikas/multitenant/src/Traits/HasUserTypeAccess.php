@@ -24,7 +24,7 @@ trait HasUserTypeAccess
      */
     protected static function applyUserTypeFilters(Builder $builder)
     {
-        if (!Tenant::check() || !auth()->check()) {
+        if (! Tenant::check() || ! auth()->check()) {
             return;
         }
 
@@ -32,7 +32,7 @@ trait HasUserTypeAccess
         $tenant = Tenant::current();
         $tenantUser = $user->getTenantUser($tenant);
 
-        if (!$tenantUser) {
+        if (! $tenantUser) {
             return;
         }
 
@@ -64,12 +64,12 @@ trait HasUserTypeAccess
 
         // Los clientes solo ven sus propios datos
         if (in_array('user_id', $builder->getModel()->getFillable())) {
-            $builder->where($table . '.user_id', $tenantUser->user_id);
+            $builder->where($table.'.user_id', $tenantUser->user_id);
         }
 
         // Filtrar por estado si el modelo tiene campo status
         if (in_array('status', $builder->getModel()->getFillable())) {
-            $builder->whereIn($table . '.status', ['active', 'pending']);
+            $builder->whereIn($table.'.status', ['active', 'pending']);
         }
     }
 
@@ -81,19 +81,19 @@ trait HasUserTypeAccess
         $permissions = $tenantUser->permissions ?? [];
 
         // Los empleados pueden ver datos según sus permisos
-        if (!in_array('view_all_data', $permissions)) {
+        if (! in_array('view_all_data', $permissions)) {
             $table = $builder->getModel()->getTable();
 
             // Si tiene permisos de su departamento
             if (in_array('view_department_data', $permissions)) {
                 $department = $tenantUser->custom_data['department'] ?? null;
                 if ($department && in_array('department', $builder->getModel()->getFillable())) {
-                    $builder->where($table . '.department', $department);
+                    $builder->where($table.'.department', $department);
                 }
             }
             // Solo sus propios datos
             elseif (in_array('user_id', $builder->getModel()->getFillable())) {
-                $builder->where($table . '.user_id', $tenantUser->user_id);
+                $builder->where($table.'.user_id', $tenantUser->user_id);
             }
         }
     }
@@ -107,9 +107,9 @@ trait HasUserTypeAccess
 
         // Los proveedores solo ven datos relacionados con ellos
         if (in_array('vendor_id', $builder->getModel()->getFillable())) {
-            $builder->where($table . '.vendor_id', $tenantUser->user_id);
+            $builder->where($table.'.vendor_id', $tenantUser->user_id);
         } elseif (in_array('user_id', $builder->getModel()->getFillable())) {
-            $builder->where($table . '.user_id', $tenantUser->user_id);
+            $builder->where($table.'.user_id', $tenantUser->user_id);
         }
     }
 
@@ -125,12 +125,12 @@ trait HasUserTypeAccess
         if (in_array('view_partner_data', $permissions)) {
             // Pueden ver datos de otros partners
             if (in_array('partner_id', $builder->getModel()->getFillable())) {
-                $builder->whereNotNull($table . '.partner_id');
+                $builder->whereNotNull($table.'.partner_id');
             }
         } else {
             // Solo sus propios datos
             if (in_array('user_id', $builder->getModel()->getFillable())) {
-                $builder->where($table . '.user_id', $tenantUser->user_id);
+                $builder->where($table.'.user_id', $tenantUser->user_id);
             }
         }
     }
@@ -174,7 +174,7 @@ trait HasUserTypeAccess
      */
     public function canBeViewedByCurrentUser(): bool
     {
-        if (!Tenant::check() || !auth()->check()) {
+        if (! Tenant::check() || ! auth()->check()) {
             return false;
         }
 
@@ -182,7 +182,7 @@ trait HasUserTypeAccess
         $tenant = Tenant::current();
         $tenantUser = $user->getTenantUser($tenant);
 
-        if (!$tenantUser) {
+        if (! $tenantUser) {
             return false;
         }
 
@@ -241,6 +241,7 @@ trait HasUserTypeAccess
         // Si puede ver datos de su departamento
         if (in_array('view_department_data', $permissions)) {
             $department = $tenantUser->custom_data['department'] ?? null;
+
             return $department && isset($this->department) && $this->department === $department;
         }
 
