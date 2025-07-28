@@ -388,17 +388,29 @@ jobs:
 
       - name: Create deployment artifact
         run: |
+          echo "🏗️ Creating deployment artifact..."
           mkdir -p deploy
+          
+          # Crear el archivo tar excluyendo directorios y archivos innecesarios
           tar -czf deploy/kodikas-multitenant-${{ github.sha }}.tar.gz \
             --exclude='.git' \
+            --exclude='deploy' \
             --exclude='node_modules' \
             --exclude='tests' \
             --exclude='.env' \
+            --exclude='.env.*' \
             --exclude='storage/logs/*' \
             --exclude='storage/framework/cache/*' \
             --exclude='storage/framework/sessions/*' \
             --exclude='storage/framework/views/*' \
+            --exclude='storage/framework/testing/*' \
+            --exclude='.phpunit.result.cache' \
+            --exclude='coverage.xml' \
+            --exclude='changelog.md' \
             .
+          
+          echo "📦 Artifact created successfully"
+          ls -lah deploy/
 
       - name: Upload deployment artifact
         uses: actions/upload-artifact@v4
@@ -413,6 +425,15 @@ jobs:
           echo "📦 Artifact: kodikas-multitenant-${{ github.sha }}.tar.gz"
           echo "🎯 Environment: Production"
           echo "⏰ Deploy time: $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+          
+          # Verificar que el artifact existe
+          if [ -f "deploy/kodikas-multitenant-${{ github.sha }}.tar.gz" ]; then
+            echo "✅ Artifact verified successfully"
+            echo "📏 Artifact size: $(du -h deploy/kodikas-multitenant-${{ github.sha }}.tar.gz | cut -f1)"
+          else
+            echo "❌ Artifact not found"
+            exit 1
+          fi
           
           # Aquí irían los comandos específicos de tu deploy
           # Ejemplos personalizables según tu infraestructura:
