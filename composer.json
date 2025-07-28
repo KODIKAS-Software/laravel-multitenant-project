@@ -1,7 +1,7 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
     "name": "kodikas/laravel-multitenant-project",
-    "type": "project",
+    "type": "library",
     "description": "Proyecto Laravel con paquete multitenant avanzado para SaaS empresarial - Demo Project",
     "keywords": ["laravel", "framework", "multitenant", "saas", "kodikas", "demo"],
     "license": "MIT",
