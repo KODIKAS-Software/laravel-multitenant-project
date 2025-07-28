@@ -52,7 +52,11 @@ jobs:
 
     - name: Install Laravel ${{ matrix.laravel }}
       run: |
-        # Remover la línea problemática que fuerza una versión específica
+        # Limpiar cache de composer y resolver conflictos de lock file
+        composer clear-cache
+        rm -f composer.lock
+        
+        # Instalar dependencias frescas
         composer install --prefer-dist --no-interaction --optimize-autoloader
 
     - name: Verify Laravel installation
