@@ -7,6 +7,12 @@ on:
     branches: [ develop, master ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+  packages: write
+
 jobs:
   tests:
     runs-on: ubuntu-latest
@@ -210,12 +216,18 @@ jobs:
     needs: [tests, code-quality]
     if: github.ref == 'refs/heads/master' && github.event_name == 'push' && (contains(github.event.head_commit.message, 'Merge pull request') || contains(github.event.head_commit.message, 'Merged PR'))
 
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
+          persist-credentials: true
 
       - name: Setup Git
         run: |
@@ -298,8 +310,15 @@ jobs:
       - name: Create and push tag
         run: |
           NEW_VERSION="${{ steps.new_version.outputs.new_version }}"
+          echo "Creating tag: $NEW_VERSION"
+          
+          # Configurar el remote con el token
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+          
+          # Crear y push del tag
           git tag -a $NEW_VERSION -m "Release $NEW_VERSION - Automated release from PR merge"
           git push origin $NEW_VERSION
+          
           echo "Created and pushed tag: $NEW_VERSION"
 
       - name: Generate changelog
@@ -332,22 +351,20 @@ jobs:
           EOF
 
       - name: Create GitHub Release
-        uses: actions/create-release@v1
-        id: create_release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ steps.new_version.outputs.new_version }}
-          release_name: 'Release ${{ steps.new_version.outputs.new_version }}'
+          name: 'Release ${{ steps.new_version.outputs.new_version }}'
           body_path: changelog.md
           draft: false
           prerelease: false
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Output release info
         run: |
           echo "✅ Release created successfully!"
           echo "🏷️ Tag: ${{ steps.new_version.outputs.new_version }}"
-          echo "🔗 Release URL: ${{ steps.create_release.outputs.html_url }}"
+          echo "🔗 Release URL: https://github.com/${{ github.repository }}/releases/tag/${{ steps.new_version.outputs.new_version }}"
 
   deploy:
     runs-on: ubuntu-latest
