@@ -9,7 +9,7 @@
         "php": "^8.2",
         "laravel/framework": "^12.0",
         "laravel/tinker": "^2.10.1",
-        "kodikas/multitenant": "^1.0"
+        "kodikas/multitenant": "dev-develop"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
@@ -23,7 +23,10 @@
     "repositories": [
         {
             "type": "path",
-            "url": "./packages/kodikas/multitenant"
+            "url": "./packages/kodikas/multitenant",
+            "options": {
+                "symlink": true
+            }
         }
     ],
     "autoload": {
@@ -69,6 +72,6 @@
             "php-http/discovery": true
         }
     },
-    "minimum-stability": "stable",
+    "minimum-stability": "dev",
     "prefer-stable": true
 }
