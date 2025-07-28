@@ -8,6 +8,7 @@ parameters:
         - src/Traits/BelongsToTenant.php (?)
         - src/Traits/HasTenants.php (?)
         - src/Traits/HasUserTypeAccess.php (?)
+        - src/TenantManager.php
     ignoreErrors:
         # Ignorar errores de tipos faltantes específicos
         -
