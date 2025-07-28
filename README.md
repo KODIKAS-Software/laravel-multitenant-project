@@ -7,9 +7,10 @@
 
 # 🏢 Kodikas Laravel Multitenant Project
 
-[![Laravel Compatibility](https://github.com/KODIKAS-Software/laravel-multitenant-project/workflows/Laravel%20Compatibility%20Matrix/badge.svg)](https://github.com/KODIKAS-Software/laravel-multitenant-project/actions)
-[![Security Scan](https://github.com/KODIKAS-Software/laravel-multitenant-project/workflows/Security%20&%20Vulnerability%20Scan/badge.svg)](https://github.com/KODIKAS-Software/laravel-multitenant-project/actions)
-[![Code Quality](https://github.com/KODIKAS-Software/laravel-multitenant-project/workflows/Code%20Quality%20&%20Validation/badge.svg)](https://github.com/KODIKAS-Software/laravel-multitenant-project/actions)
+[![CI/CD Pipeline](https://github.com/KODIKAS-Software/laravel-multitenant-project/workflows/CI%2FCD%20Pipeline/badge.svg)](https://github.com/KODIKAS-Software/laravel-multitenant-project/actions)
+[![Tests](https://github.com/KODIKAS-Software/laravel-multitenant-project/workflows/CI%2FCD%20Pipeline/badge.svg?event=push)](https://github.com/KODIKAS-Software/laravel-multitenant-project/actions)
+[![Code Quality](https://github.com/KODIKAS-Software/laravel-multitenant-project/workflows/CI%2FCD%20Pipeline/badge.svg?job=code-quality)](https://github.com/KODIKAS-Software/laravel-multitenant-project/actions)
+[![Auto Release](https://github.com/KODIKAS-Software/laravel-multitenant-project/workflows/CI%2FCD%20Pipeline/badge.svg?job=auto-release)](https://github.com/KODIKAS-Software/laravel-multitenant-project/actions)
 
 Proyecto Laravel con paquete multitenant avanzado para SaaS empresarial. Diseñado exclusivamente para **Laravel 12.x** con enfoque latinoamericano/empresarial.
 
@@ -93,15 +94,32 @@ Route::domain('{tenant}.example.com')->group(function () {
 ## 🧪 Testing
 
 ```bash
-# Ejecutar tests del proyecto
-php artisan test
-
-# Ejecutar tests del paquete multitenant
-cd packages/kodikas/multitenant
+# Ejecutar tests del proyecto principal
 vendor/bin/phpunit
 
-# Tests de compatibilidad
+# O usando artisan (Laravel)
+php artisan test
+
+# Ejecutar tests del paquete multitenant específicamente
+cd packages/kodikas/multitenant
+composer install
+composer test
+
+# Tests con cobertura de código
+vendor/bin/phpunit --coverage-html coverage
+
+# Tests de compatibilidad para Windows
+test-compatibility.bat
+
+# Tests de compatibilidad para Linux/Mac
 ./test-compatibility.sh
+
+# Ejecutar tests específicos por categoría
+vendor/bin/phpunit --testsuite=Feature
+vendor/bin/phpunit --testsuite=Unit
+
+# Tests con verbose output
+vendor/bin/phpunit --verbose
 ```
 
 ## 🔒 Seguridad
