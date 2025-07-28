@@ -7,7 +7,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
-        "kodikas/multitenant": "*",
+        "kodikas/multitenant": "dev-develop",
         "laravel/framework": "^12.0",
         "laravel/tinker": "^2.10.1"
     },
