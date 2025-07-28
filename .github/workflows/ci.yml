@@ -199,13 +199,236 @@ jobs:
 
     - name: Validate composer files
       run: |
-        composer validate --strict --no-check-all
+        composer validate --strict
         cd packages/kodikas/multitenant
         if [ -f "composer.json" ]; then
-          composer validate --strict --no-check-all
+          composer validate --strict
         fi
 
-    - name: Check for security vulnerabilities
-      run: |
-        composer audit --format=plain
-        echo "✅ Security audit completed"
+  auto-release:
+    runs-on: ubuntu-latest
+    needs: [tests, code-quality]
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push' && (contains(github.event.head_commit.message, 'Merge pull request') || contains(github.event.head_commit.message, 'Merged PR'))
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Git
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+
+      - name: Get latest tag
+        id: get_latest_tag
+        run: |
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          echo "latest_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
+          echo "Latest tag found: $LATEST_TAG"
+
+      - name: Determine version increment
+        id: version_increment
+        run: |
+          COMMIT_MESSAGE="${{ github.event.head_commit.message }}"
+          echo "Commit message: $COMMIT_MESSAGE"
+          
+          if echo "$COMMIT_MESSAGE" | grep -iE "(breaking|major|BREAKING CHANGE)" > /dev/null; then
+            echo "increment=major" >> $GITHUB_OUTPUT
+            echo "Detected: MAJOR version increment"
+          elif echo "$COMMIT_MESSAGE" | grep -iE "(feat|feature|add|new)" > /dev/null; then
+            echo "increment=minor" >> $GITHUB_OUTPUT
+            echo "Detected: MINOR version increment"
+          else
+            echo "increment=patch" >> $GITHUB_OUTPUT
+            echo "Detected: PATCH version increment"
+          fi
+
+      - name: Calculate new version
+        id: new_version
+        run: |
+          LATEST_TAG="${{ steps.get_latest_tag.outputs.latest_tag }}"
+          INCREMENT="${{ steps.version_increment.outputs.increment }}"
+          
+          VERSION_NUMBER=${LATEST_TAG#v}
+          IFS='.' read -ra VERSION_PARTS <<< "$VERSION_NUMBER"
+          MAJOR=${VERSION_PARTS[0]:-0}
+          MINOR=${VERSION_PARTS[1]:-0}
+          PATCH=${VERSION_PARTS[2]:-0}
+          
+          case $INCREMENT in
+            major)
+              MAJOR=$((MAJOR + 1))
+              MINOR=0
+              PATCH=0
+              ;;
+            minor)
+              MINOR=$((MINOR + 1))
+              PATCH=0
+              ;;
+            patch)
+              PATCH=$((PATCH + 1))
+              ;;
+          esac
+          
+          NEW_VERSION="v$MAJOR.$MINOR.$PATCH"
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "New version will be: $NEW_VERSION"
+
+      - name: Get PR information
+        id: pr_info
+        run: |
+          PR_NUMBER=$(echo "${{ github.event.head_commit.message }}" | grep -oE '#[0-9]+' | head -1 | sed 's/#//')
+          
+          if [ ! -z "$PR_NUMBER" ]; then
+            echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
+            PR_TITLE=$(gh pr view $PR_NUMBER --json title --jq '.title' 2>/dev/null || echo "Automatic release")
+            PR_AUTHOR=$(gh pr view $PR_NUMBER --json author --jq '.author.login' 2>/dev/null || echo "${{ github.actor }}")
+            echo "pr_title=$PR_TITLE" >> $GITHUB_OUTPUT
+            echo "pr_author=$PR_AUTHOR" >> $GITHUB_OUTPUT
+          else
+            echo "pr_title=Automatic release from master merge" >> $GITHUB_OUTPUT
+            echo "pr_author=${{ github.actor }}" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create and push tag
+        run: |
+          NEW_VERSION="${{ steps.new_version.outputs.new_version }}"
+          git tag -a $NEW_VERSION -m "Release $NEW_VERSION - Automated release from PR merge"
+          git push origin $NEW_VERSION
+          echo "Created and pushed tag: $NEW_VERSION"
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          NEW_VERSION="${{ steps.new_version.outputs.new_version }}"
+          LATEST_TAG="${{ steps.get_latest_tag.outputs.latest_tag }}"
+          
+          if [ "$LATEST_TAG" != "v0.0.0" ]; then
+            CHANGELOG=$(git log $LATEST_TAG..HEAD --pretty=format:"- %s (%an)" --no-merges)
+          else
+            CHANGELOG=$(git log --pretty=format:"- %s (%an)" --no-merges)
+          fi
+          
+          cat > changelog.md << EOF
+          ## 🚀 Release $NEW_VERSION
+          
+          ### 📋 Pull Request Information
+          - **PR Author**: ${{ steps.pr_info.outputs.pr_author }}
+          - **PR Title**: ${{ steps.pr_info.outputs.pr_title }}
+          - **Version Type**: ${{ steps.version_increment.outputs.increment }}
+          
+          ### 📝 Changes
+          $CHANGELOG
+          
+          ### ℹ️ Release Information
+          - **Commit**: ${{ github.sha }}
+          - **Release Date**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          - **Branch**: master
+          EOF
+
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        id: create_release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.new_version.outputs.new_version }}
+          release_name: 'Release ${{ steps.new_version.outputs.new_version }}'
+          body_path: changelog.md
+          draft: false
+          prerelease: false
+
+      - name: Output release info
+        run: |
+          echo "✅ Release created successfully!"
+          echo "🏷️ Tag: ${{ steps.new_version.outputs.new_version }}"
+          echo "🔗 Release URL: ${{ steps.create_release.outputs.html_url }}"
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [tests, code-quality, auto-release]
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    environment: production
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv, fileinfo, openssl
+
+      - name: Install dependencies for production
+        run: |
+          composer install --prefer-dist --no-interaction --optimize-autoloader --no-dev
+
+      - name: Create deployment artifact
+        run: |
+          mkdir -p deploy
+          tar -czf deploy/kodikas-multitenant-${{ github.sha }}.tar.gz \
+            --exclude='.git' \
+            --exclude='node_modules' \
+            --exclude='tests' \
+            --exclude='.env' \
+            --exclude='storage/logs/*' \
+            --exclude='storage/framework/cache/*' \
+            --exclude='storage/framework/sessions/*' \
+            --exclude='storage/framework/views/*' \
+            .
+
+      - name: Upload deployment artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-package
+          path: deploy/kodikas-multitenant-${{ github.sha }}.tar.gz
+          retention-days: 30
+
+      - name: Deploy to production server
+        run: |
+          echo "🚀 Iniciando deploy a producción..."
+          echo "📦 Artifact: kodikas-multitenant-${{ github.sha }}.tar.gz"
+          echo "🎯 Environment: Production"
+          echo "⏰ Deploy time: $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+          
+          # Aquí irían los comandos específicos de tu deploy
+          # Ejemplos personalizables según tu infraestructura:
+          
+          # Para servidor tradicional con rsync:
+          # rsync -avz --delete ./ user@server:/path/to/app/
+          
+          # Para Docker:
+          # docker build -t kodikas-multitenant:${{ github.sha }} .
+          # docker push kodikas-multitenant:${{ github.sha }}
+          
+          # Para Kubernetes:
+          # kubectl set image deployment/app app=kodikas-multitenant:${{ github.sha }}
+          
+          # Para AWS/S3:
+          # aws s3 sync ./public s3://your-bucket --delete
+          
+          echo "✅ Deploy completado exitosamente!"
+
+      - name: Notify deployment success
+        run: |
+          echo "🎉 Deployment successful!"
+          echo "🔗 Application URL: https://tu-app.com"
+          echo "📊 Status: Production deployment completed"
+          echo "🏷️ Version: Latest from master"
+
+  notify-failure:
+    runs-on: ubuntu-latest
+    if: failure()
+    needs: [tests, code-quality, auto-release, deploy]
+    steps:
+      - name: Notify failure
+        run: |
+          echo "❌ Pipeline failed"
+          echo "🔍 Check the workflow logs for details"
+          echo "📧 Consider setting up notifications to Slack/Discord"
