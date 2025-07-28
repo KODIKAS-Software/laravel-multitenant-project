@@ -96,15 +96,32 @@ Route::domain('{tenant}.example.com')->group(function () {
 ## 🧪 Testing
 
 ```bash
-# Ejecutar tests del proyecto
-php artisan test
-
-# Ejecutar tests del paquete multitenant
-cd packages/kodikas/multitenant
+# Ejecutar tests del proyecto principal
 vendor/bin/phpunit
 
-# Tests de compatibilidad
+# O usando artisan (Laravel)
+php artisan test
+
+# Ejecutar tests del paquete multitenant específicamente
+cd packages/kodikas/multitenant
+composer install
+composer test
+
+# Tests con cobertura de código
+vendor/bin/phpunit --coverage-html coverage
+
+# Tests de compatibilidad para Windows
+test-compatibility.bat
+
+# Tests de compatibilidad para Linux/Mac
 ./test-compatibility.sh
+
+# Ejecutar tests específicos por categoría
+vendor/bin/phpunit --testsuite=Feature
+vendor/bin/phpunit --testsuite=Unit
+
+# Tests con verbose output
+vendor/bin/phpunit --verbose
 ```
 
 ## 🔒 Seguridad
