@@ -1,10 +1,10 @@
 {
-    "name": "kodikas/laravel-multitenant",
+    "name": "kodikas/multitenant",
     "description": "Paquete Laravel para manejo avanzado de multi-tenant tipo SaaS con enfoque latinoamericano/empresarial",
     "type": "library",
     "license": "MIT",
     "keywords": ["laravel", "multitenant", "saas", "tenant", "multitenancy", "laravel-12", "php-8"],
-    "homepage": "https://github.com/MiguelMort09/laravel-multitenant",
+    "homepage": "https://github.com/KODIKAS-Software/laravel-multitenant-project",
     "readme": "README.md",
     "authors": [
         {
@@ -15,8 +15,8 @@
         }
     ],
     "support": {
-        "issues": "https://github.com/MiguelMort09/laravel-multitenant/issues",
-        "source": "https://github.com/MiguelMort09/laravel-multitenant"
+        "issues": "https://github.com/KODIKAS-Software/laravel-multitenant-project/issues",
+        "source": "https://github.com/KODIKAS-Software/laravel-multitenant-project"
     },
     "require": {
         "php": "^8.2",
@@ -26,7 +26,9 @@
     },
     "require-dev": {
         "orchestra/testbench": "^10.0",
-        "phpunit/phpunit": "^11.0"
+        "phpunit/phpunit": "^11.0",
+        "mockery/mockery": "^1.6",
+        "fakerphp/faker": "^1.23"
     },
     "autoload": {
         "psr-4": {
@@ -43,9 +45,17 @@
             "providers": [
                 "Kodikas\\Multitenant\\MultitenantServiceProvider"
             ],
-            "aliases": {
-                "Tenant": "Kodikas\\Multitenant\\Facades\\Tenant"
-            }
+            "aliases": {}
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit",
+        "test-coverage": "vendor/bin/phpunit --coverage-html coverage"
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "php-http/discovery": true
         }
     },
     "minimum-stability": "stable",
