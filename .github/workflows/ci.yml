@@ -395,12 +395,15 @@ jobs:
       - name: Create deployment artifact
         run: |
           echo "🏗️ Creating deployment artifact..."
-          mkdir -p deploy
-          
-          # Crear el archivo tar excluyendo directorios y archivos innecesarios
-          tar -czf deploy/kodikas-multitenant-${{ github.sha }}.tar.gz \
+          mkdir -p deploy-temp
+
+          TAR_FILE=kodikas-multitenant-${{ github.sha }}.tar.gz
+
+          # Crear el archivo tar fuera del directorio a empaquetar
+          tar -czf $TAR_FILE \
             --exclude='.git' \
             --exclude='deploy' \
+            --exclude='deploy-temp' \
             --exclude='node_modules' \
             --exclude='tests' \
             --exclude='.env' \
@@ -414,15 +417,18 @@ jobs:
             --exclude='coverage.xml' \
             --exclude='changelog.md' \
             .
-          
+
+          # Mover el artefacto al directorio temporal
+          mv $TAR_FILE deploy-temp/
+
           echo "📦 Artifact created successfully"
-          ls -lah deploy/
+          ls -lah deploy-temp/
 
       - name: Upload deployment artifact
         uses: actions/upload-artifact@v4
         with:
           name: deployment-package
-          path: deploy/kodikas-multitenant-${{ github.sha }}.tar.gz
+          path: deploy-temp/kodikas-multitenant-${{ github.sha }}.tar.gz
           retention-days: 30
 
       - name: Deploy to production server
